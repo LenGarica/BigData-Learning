@@ -1,6 +1,7 @@
 目录：
 
 - [Hadoop单机安装篇](#hadoop单机安装篇)
+    - [安装软件的环境变量配置](#安装软件的环境变量配置)
     - [deepin下QQ、微信的安装](#deepin下qq微信的安装)
     - [deepin下JDK的安装（JDK8和JDK13）](#deepin下jdk的安装jdk8和jdk13)
     - [deepin下Scala的安装](#deepin下scala的安装)
@@ -19,6 +20,55 @@
 
 ## Hadoop单机安装篇
 
+### 安装软件的环境变量配置
+
+```bash
+# java environment
+export	JAVA_HOME=/usr/lib/jdk1.8.0_211
+export	CLASSPATH=.:$JAVA_HOME/lib:$JRE_HOME/lib:$CLASSPATH
+export	PATH=$JAVA_HOME/bin:$JRE_HOME/bin:$PATH
+export	JRE_HOME=$JAVA_HOME/jre
+
+# scala environment
+export SCALA_HOME=/usr/lib/scala-2.11.12
+export PATH=$SCALA_HOME/bin:$PATH
+
+# hadoop environment
+export HADOOP_HOME=/home/willhope/app/hadoop-2.6.0-cdh5.15.1
+export PATH=$HADOOP_HOME/bin:$PATH
+
+# hive environment
+export HIVE_HOME=/home/willhope/app/hive-1.1.0-cdh5.15.1
+export PATH=$HIVE_HOME/bin:$PATH
+
+# spark environment
+export SPARK_HOME=/home/willhope/app/spark-2.4.4-bin-2.6.0-cdh5.15.1
+export PATH=$SPARK_HOME/bin:$PATH
+
+# hbase environment
+export HBASE_HOME=/home/willhope/app/hbase-1.2.0-cdh5.15.1 
+export PATH=$HBASE_HOME/bin:$PATH
+
+# sqoop environment
+export SQOOP_HOME=/home/willhope/app/sqoop2-1.99.5-cdh5.15.1
+export PATH=$SQOOP_HOME/bin:$PATH
+
+# zookeeper environment
+export ZOOKEEPER_HOME=/home/willhope/app/zookeeper-3.4.5-cdh5.15.1
+export PATH=$ZOOKEEPER_HOME/bin:$PATH
+
+# kafka environment
+export KAFKA_HOME=/home/willhope/app/kafka_2.11-2.4.0
+export PATH=$KAFKA_HOME/bin:$PATH
+
+# flume environment
+export FLUME_HOME=/home/willhope/app/apache-flume-1.6.0-cdh5.15.1-bin
+export PATH=$FLUME_HOME/bin:$PATH
+
+# anaconda environment
+export PATH=/home/willhope/anaconda3/bin:$PATH
+
+```
 
 ### deepin下QQ、微信的安装
 
@@ -193,9 +243,9 @@
 
 9. cd app/hadoop-2.6.0-cdh5.15.1/etc/hadoop，进入到此目录中进行相关的配置
 
-10. sudo vi hadoop-env.sh进入到hadoop环境的配置，将java环境配置到这个文件中，因为hadoop环境是默认，因此不用配置
+10. vi hadoop-env.sh进入到hadoop环境的配置，将java环境配置到这个文件中，因为hadoop环境是默认，因此不用配置
 
-11. sudo vi core-site.xml添加如下配置
+11. vi core-site.xml添加如下配置
     
     ````xml
     <configuration> 
@@ -207,7 +257,7 @@
     ````
        
        
-12. sudo vi hdfs-site.xml
+12. vi hdfs-site.xml
     
     ````xml
     <configuration> 
@@ -222,22 +272,47 @@
          </property>
     </configuration>
     ````
-         
-13. vi slaves;　　　　　将里面的localhost改成电脑的用户名
+
+13. vi mapred-site.xml
+
+```
+<configuration>
+    <property>
+        <name>mapreduce.framework.name</name>
+        <value>yarn</value>
+    </property>
+</configuration>
+
+```
+
+14. vi yarn-site.xml
+
+```
+<configuration>
+    <property>
+        <name>yarn.nodemanager.aux-services</name>
+        <value>mapreduce_shuffle</value>
+    </property>
+</configuration>
+
+```
+
+
+15. vi slaves;　　　　　将里面的localhost改成电脑的用户名，如果是单机linux而非虚拟机，则可以不用更改
     
-14. 重新开一个终端，sudo vi /etc/profile ; 添加hadoop环境到系统环境中　export HADOOP_HOME=/home/willhope/app/hadoop-2.6.0-cdh5.15.1;export PATH=$HADOOP_HOME/bin:$PATH; 保存后，source /etc/profile
+16. 重新开一个终端，sudo vi /etc/profile ; 添加hadoop环境到系统环境中　export HADOOP_HOME=/home/willhope/app/hadoop-2.6.0-cdh5.15.1;export PATH=$HADOOP_HOME/bin:$PATH; 保存后，source /etc/profile
     
-15. 启动HDFS，第一次执行的时候一定要格式化文件系统，不要重复执行,cd $HADOOP_HOME/bin ; hdsf namenode -format
+17. 启动HDFS，第一次执行的时候一定要格式化文件系统，不要重复执行,cd $HADOOP_HOME/bin ; hdsf namenode -format
     
-16. 启动集群: cd .. ; cd sbin/;  ./start-dfs.sh;结束后，jps查看当前是否启动成功，如果出现DataNode,NameNode,SecondaryNameNode则成功。如果以后使用jps，只要保证DataNode,NameNode存在就行。
+18. 启动集群: cd .. ; cd sbin/;  ./start-dfs.sh;结束后，jps查看当前是否启动成功，如果出现DataNode,NameNode,SecondaryNameNode则成功。如果以后使用jps，只要保证DataNode,NameNode存在就行。
     
-17. 在浏览器中输入自己用户名映射的ip地址:50070。例如,我这里就是`http://127.0.0.1:50070`如果出现界面，表明成功。如果jps出现，但是浏览器没出现，请关闭防火墙，然后在输入地址。
+19. 在浏览器中输入自己用户名映射的ip地址:50070。例如,我这里就是`http://127.0.0.1:50070`如果出现界面，表明成功。如果jps出现，但是浏览器没出现，请关闭防火墙，然后在输入地址。
     
-18. 如果要停止hdfs，则在hadoop的sbin目录下输入./stop-dfs.sh；要单一启动或关闭，hadoop-daemons.sh start/stop NameNode/DataNode/SecondaryNameNode ;
+20. 如果要停止hdfs，则在hadoop的sbin目录下输入./stop-dfs.sh；要单一启动或关闭，hadoop-daemons.sh start/stop NameNode/DataNode/SecondaryNameNode ;
     
-19. HDFS的操作跟shell的操作一致，在hadoop目录下进行操作，前缀hadoop fs 加上下面的各类操作，常用的-put（将文件上传）,-ls（显示当前仓库中有哪些文件），-cat（查看文件），-mkdir（创建一个文件夹），-get（从hdfs上获得一份文件到本地），-mv（移动某个文件到某个位置），-cp（将一个文件拷贝一份），-getmerge（将两个文件合并起来），-rm（删除一个文件），-rmdir（删除一个为空的文件夹），-rmr(此命令相当于-rm -r，删除一个文件夹),-text(查看某个文件),-R(递归显示某个文件夹中的文件)
+21. HDFS的操作跟shell的操作一致，在hadoop目录下进行操作，前缀hadoop fs 加上下面的各类操作，常用的-put（将文件上传）,-ls（显示当前仓库中有哪些文件），-cat（查看文件），-mkdir（创建一个文件夹），-get（从hdfs上获得一份文件到本地），-mv（移动某个文件到某个位置），-cp（将一个文件拷贝一份），-getmerge（将两个文件合并起来），-rm（删除一个文件），-rmdir（删除一个为空的文件夹），-rmr(此命令相当于-rm -r，删除一个文件夹),-text(查看某个文件),-R(递归显示某个文件夹中的文件)
     
-20. 上传一个本地文件到hdfs后，可以使用Hadoop fs -du -s -h /project/文件，可以查看文件的具体大小。
+22. 上传一个本地文件到hdfs后，可以使用Hadoop fs -du -s -h /project/文件，可以查看文件的具体大小。
     
     ```bash
        Usage: hadoop fs [generic options]
@@ -299,7 +374,7 @@
     <configuration>
     <property>
       <name>javax.jdo.option.ConnectionURL</name>
-      <value>jdbc:mysql://willhope:3306/hadoop_hive?createDatabaseIfNotExist=true</value>
+      <value>jdbc:mysql://127.0.0.1:3306/hadoop_hive?createDatabaseIfNotExist=true</value>
     </property>
 
     <property>
