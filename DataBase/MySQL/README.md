@@ -1,25 +1,40 @@
-## MySQL学习笔记
+MySQL
+====
+
+前言：
 
 在学习前，请将两个MySQL脚本导入到MySQL中。先创建一个数据库Test，然后依次将create.sql和populate.sql导入到MySql中。先在MYSQL中创建一个名为test的数据库，使用use 数据库，再输入source 绝对路径/create.sql和source 绝对路径/populate.sql，便可以将数据添加到数据库中。
 
+目录：
 
-- [一、查询数据库名称时](#一查询数据库名称时)
-- [二、选择数据库](#二选择数据库)
-- [三、选择数据库后，显示当前数据库的表](#三选择数据库后显示当前数据库的表)
-- [四、显示当前表中的列](#四显示当前表中的列)        
-- [五、select检索语句](#五select检索语句)        
-- [六、排序检索数据](#六排序检索数据)        
-- [七、过滤数据](#七过滤数据)        
-- [八、通配符过滤](#八通配符过滤)
-- [九、计算字段](#九计算字段)        
-- [十、函数](#十函数)
-- [十一、汇总数据](#十一汇总数据)
-- [十二、分组数据](#十二分组数据)
-- [十三、使用子查询](#十三使用子查询)
-- [十四、联结表](#十四联结表)
-- [十五、创建高级联结](#十五创建高级联结)
-- [十六、组合查询](#十六组合查询)
+- [第一部分、MySQL学习笔记](#第一部分mysql学习笔记)        
+  - [一、查询数据库名称时](#一查询数据库名称时)        
+  - [二、选择数据库](#二选择数据库)        
+  - [三、选择数据库后，显示当前数据库的表](#三选择数据库后显示当前数据库的表)        
+  - [四、显示当前表中的列](#四显示当前表中的列)       
+  - [五、select检索语句](#五select检索语句)        
+  - [六、排序检索数据](#六排序检索数据)        
+  - [七、过滤数据](#七过滤数据)        
+  - [八、通配符过滤](#八通配符过滤)        
+  - [九、计算字段](#九计算字段)        
+  - [十、函数](#十函数)        
+  - [十一、汇总数据](#十一汇总数据)        
+  - [十二、分组数据](#十二分组数据)        
+  - [十三、使用子查询](#十三使用子查询)        
+  - [十四、联结表](#十四联结表)        
+  - [十五、创建高级联结](#十五创建高级联结)        
+  - [十六、组合查询](#十六组合查询)        
+  - [十七、全文本搜索](#十七全文本搜索)        
+  - [十八、插入数据](#十八插入数据)        
+  - [十九、更新和删除](#十九更新和删除)        
+  - [二十、创建和操作表](#二十创建和操作表)        
+  - [二十一、使用视图](#二十一使用视图)
+- [第二部分、MySQL练习题](#第二部分mysql练习题)        
+  - [一、查找最晚入职员工的所有信息](#一查找最晚入职员工的所有信息)        
+  - [二、查找入职员工时间排名倒数第三的员工所有信息](#二查找入职员工时间排名倒数第三的员工所有信息)
 
+
+## 第一部分、MySQL学习笔记
 
 sql常用表
 
@@ -968,7 +983,8 @@ MySQL也允许执行多个查询（多条SELECT语句），并将结果作为单
 
   ```
 
-####　十七、全文本搜索
+
+#### 十七、全文本搜索
 
   一般在创建表时启用全文本搜索，但是只有MyISAM搜索引擎可以支持全文本搜索，例如：
 
@@ -992,7 +1008,7 @@ MySQL也允许执行多个查询（多条SELECT语句），并将结果作为单
 
   ```
 
-####　十八、插入数据
+#### 十八、插入数据
 
   使用insert来插入数据。语法：insert into 表名(列1，列2，列3，...) values(‘值1'，’值2‘，’值3‘，...)；如果插入的列是表中所有的列，那么列名可以不写。
 
@@ -1065,5 +1081,70 @@ MySQL也允许执行多个查询（多条SELECT语句），并将结果作为单
   where prod_id = 'TNT2'
   ```
 
+## 第二部分、MySQL练习题
 
+习题来源：https://www.nowcoder.com/ta/sql
 
+#### 一、查找最晚入职员工的所有信息
+
+表结构信息：
+
+```sql
+CREATE TABLE `employees` (
+`emp_no` int(11) NOT NULL,
+`birth_date` date NOT NULL,
+`first_name` varchar(14) NOT NULL,
+`last_name` varchar(16) NOT NULL,
+`gender` char(1) NOT NULL,
+`hire_date` date NOT NULL,
+PRIMARY KEY (`emp_no`));
+```
+
+输出描述:
+
+|emp_no  |birth_date  |first_name  |last_name   |gender   |hire_date  |
+|--------|--------|--------|--------|--------|--------|--------|
+|10008   |1958-02-19|Saniya|Kalloufi|M|1994-09-15|
+
+解题：
+
+```sql
+
+法一：20ms，3312k，将入职时间按照降序排列，然后返回第一条即可
+select * from employees order by hire_date desc limit 1;
+
+法二：18ms,3280k，使用条件嵌套查询，选取最大的时间
+SELECT * FROM employees WHERE hire_date = (SELECT MAX(hire_date) FROM employees);
+```
+
+#### 二、查找入职员工时间排名倒数第三的员工所有信息
+
+表结构信息：
+
+```sql
+CREATE TABLE `employees` (
+`emp_no` int(11) NOT NULL,
+`birth_date` date NOT NULL,
+`first_name` varchar(14) NOT NULL,
+`last_name` varchar(16) NOT NULL,
+`gender` char(1) NOT NULL,
+`hire_date` date NOT NULL,
+PRIMARY KEY (`emp_no`));
+```
+
+输出描述:
+
+|emp_no  |birth_date  |first_name  |last_name   |gender   |hire_date  |
+|--------|--------|--------|--------|--------|--------|--------|
+|10005   |1955-01-21|Kyoichi|Maliniak|M|1989-09-12|
+
+解题：
+
+```sql
+
+法一：23ms，4672k，将入职时间按照降序排列，然后返回从第二行开始后的一行
+select * from employees order by hire_date desc limit 2,1;
+
+法二：17ms,3300k
+select * from employees where hire_date = (select hire_date from employees group by hire_date order by hire_date desc limit 2,1);
+```
