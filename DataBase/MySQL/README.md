@@ -2,6 +2,25 @@
 
 在学习前，请将两个MySQL脚本导入到MySQL中。先创建一个数据库Test，然后依次将create.sql和populate.sql导入到MySql中。先在MYSQL中创建一个名为test的数据库，使用use 数据库，再输入source 绝对路径/create.sql和source 绝对路径/populate.sql，便可以将数据添加到数据库中。
 
+
+- [一、查询数据库名称时](#一查询数据库名称时)
+- [二、选择数据库](#二选择数据库)
+- [三、选择数据库后，显示当前数据库的表](#三选择数据库后显示当前数据库的表)
+- [四、显示当前表中的列](#四显示当前表中的列)        
+- [五、select检索语句](#五select检索语句)        
+- [六、排序检索数据](#六排序检索数据)        
+- [七、过滤数据](#七过滤数据)        
+- [八、通配符过滤](#八通配符过滤)
+- [九、计算字段](#九计算字段)        
+- [十、函数](#十函数)
+- [十一、汇总数据](#十一汇总数据)
+- [十二、分组数据](#十二分组数据)
+- [十三、使用子查询](#十三使用子查询)
+- [十四、联结表](#十四联结表)
+- [十五、创建高级联结](#十五创建高级联结)
+- [十六、组合查询](#十六组合查询)
+
+
 sql常用表
 
 | 子句     | 说明                 | 是否必须使用             |
@@ -916,6 +935,135 @@ vendors表 存储销售产品的供应商
 
 MySQL也允许执行多个查询（多条SELECT语句），并将结果作为单个查询结果集返回。这些组合查询通常称为并或复合查询。
 
-有两种基本情况，其中需要使用组合查询：
- 在单个查询中从不同的表返回类似结构的数据；
- 对单个表执行多个查询，按单个查询返回数据。
+有两种基本情况，其中需要使用组合查询：在单个查询中从不同的表返回类似结构的数据；对单个表执行多个查询，按单个查询返回数据。
+
+
+  - 创建组合查询
+
+  可使用Union操作符来组合数条SQL查询，组合多条Select语句，将它们的结果组合成单个结果集。
+  
+  union中每个查询必须包含相同的列，表达式或聚集函数。
+  
+  union从查询结果中会自动去除重复的行，但如果想要显示所有的行，则可以使用union all 来显示。
+
+  使用order by字句进行排序，只能在最后一条select语句出现。
+
+  union也可以连接不同的表。
+
+  例子：假如需要价格小于等于5的所有物品的一个列表，而且还想包括供应商1001和1002生产的所有物品。
+
+  ```s
+  # 使用where条件查询，先单条查询
+  select vend_id, prod_id, prod_price from products where prod_price <= 5;
+
+  select vend_id, prod_id, prod_price from products where vend_id in (1001, 1002);
+
+  # 用union连接上面两条查询语句
+  select vend_id, prod_id, prod_price from products where prod_price <=5 
+  union
+  select vend_id, prod_id, prod_price from products where vend_id in (1001, 1002);
+
+  # 也可修改成如下的查询语句
+  select vend_id, prod_id, prod_price from products where prod_price <=5 or vend_id in (1001, 1002); 
+
+  ```
+
+####　十七、全文本搜索
+
+  一般在创建表时启用全文本搜索，但是只有MyISAM搜索引擎可以支持全文本搜索，例如：
+
+  ```s
+  create table productnotes(
+    node_id int not null auto_increment,
+    prod_id char(10) not null,
+    note_date datetime not null,
+    note_text text null,
+    primary key(note_id),
+    fulltext(node_text)
+  )engine=MyISAM;
+  ```
+
+  在索引之后，使用两个函数Match()和Against()执行全文本搜索，其中Match()指定被搜索的列，Against()指定要使用的搜索表达式，不区分大小写。例子:
+
+  ```s
+
+  # Match()用来针对指定的列进行搜索，Against()迎来指定词作为搜索的文本。
+  select note_text from productnotes where Match(note_text) Against('rabbit');
+
+  ```
+
+####　十八、插入数据
+
+  使用insert来插入数据。语法：insert into 表名(列1，列2，列3，...) values(‘值1'，’值2‘，’值3‘，...)；如果插入的列是表中所有的列，那么列名可以不写。
+
+  插入多行数据，insert into 表名(列1，列2，列3，...) values(‘值1'，’值2‘，’值3‘，...),values(‘值1'，’值2‘，’值3‘，...)；
+
+  将一条select查询的结果插入到表中，它由一条insert语句和select语句组成的。insert into 表名(列1，列2，列3，...) select 列1，列2，列3，... from 表
+
+
+#### 十九、更新和删除
+
+  - 更新update
+
+  语法：update 表名 set 列名1 = ’值1‘ ， 列名2 = ’值2‘ where 条件，必须有where语句，否则，会更新所有的列
+
+  - 删除delete
+
+  语法：delete from 表名 where 条件，如果省略where语句，则会删除整个表。如果想要删除整个表，不要使用delete，要使用truncate table语句，它能够完成相同的工作，但是速度更快。
+
+
+#### 二十、创建和操作表
+
+  - 创建create
+
+    语法： create table 表名 (
+      
+      列名1 数据类型 是否为空 (整型是否自增)，
+      
+      列名2 数据类型 是否为空  指定默认值(default 1)，
+      
+      列名3 数据类型 是否为空，
+      
+      列名4 数据类型 是否为空，
+
+      primary key(列名1，...) 
+      
+    )engine=innodb;
+
+  若写成not null，则表示创建表的时候，必须有值。
+
+  - 更新表的定义alter
+
+    语法：alter table 表名 [add 新列名 数据类型]/[drop column 列名]
+
+  - 删除表drop
+
+    语法：drop table 表名;
+
+  - 重命名表rename
+
+    语法：rename table 新表名1 to 旧表名1,新表名2 to 旧表名2,新表名3 to 旧表名3;
+
+
+#### 二十一、使用视图
+
+  将查询结果组合成视图给用户。例如，创建一个名为productcustomers的视图，它联结三个表，返回已订购了任意产品的所有客户的列表。
+
+  ```s
+  create view productcustomers as 
+  select cust_name, cust_contact, prod_id
+  from customers, orders, orderitems
+  where customers.cust_id = orders.cust_id
+  and orderitems.order_num = orders.order_num;
+  ```
+  
+  视图创建完毕后，也可以在视图的基础上，进行与表相同的操作，视图只存放结构，而没有数据。例如，在productcustomers基础上，查询订购产品TNT2的客户。
+
+  ```s
+  select cust_name, cust_contact 
+  from productcustomers
+  where prod_id = 'TNT2'
+  ```
+
+
+
