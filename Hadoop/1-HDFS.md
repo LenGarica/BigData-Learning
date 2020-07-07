@@ -1,20 +1,3 @@
-- [一、介绍](#一介绍)
-- [二、HDFS 设计原理](#二hdfs-设计原理)    
-    - [2.1 HDFS 设计目标](#21-hdfs-设计目标)    
-    - [2.2 HDFS 架构（非常重要，面试重点）](#22-hdfs-架构非常重要面试重点)    
-    - [2.3 详解文件系统命名空间](#23-详解文件系统命名空间)    
-    - [2.5 数据复制](#25-数据复制)    
-    - [2.6 数据复制的实现原理](#26-数据复制的实现原理)    
-    - [2.7  副本的选择](#27--副本的选择)    
-    - [2.8 架构的稳定性](#28-架构的稳定性)        
-        - [1. 心跳机制和重新复制](#1-心跳机制和重新复制)        
-        - [2. 数据的完整性](#2-数据的完整性)        
-        - [3.元数据的磁盘故障](#3元数据的磁盘故障)        
-        - [4.支持快照](#4支持快照)
-- [附：图解HDFS存储原理](#附图解hdfs存储原理)    
-    - [1. HDFS写数据原理](#1-hdfs写数据原理)    
-    - [2. HDFS读数据原理](#2-hdfs读数据原理)    
-    - [3. HDFS故障类型和其检测方法](#3-hdfs故障类型和其检测方法)
 
 ## 一、介绍
 
@@ -86,7 +69,7 @@ HDFS 的 ` 文件系统命名空间 ` 的层次结构与大多数文件系统类
 快照支持在特定时刻存储数据副本，在数据意外损坏时，可以通过回滚操作恢复到健康的数据状态。
 
 
-## 附：图解HDFS存储原理
+## 三、图解HDFS存储原理
 
 > 说明：以下图片引用自博客：[翻译经典 HDFS 原理讲解漫画](https://blog.csdn.net/hudiefenmu/article/details/37655491)
 
@@ -114,19 +97,290 @@ HDFS 的 ` 文件系统命名空间 ` 的层次结构与大多数文件系统类
 
 
 
-**第二部分：读写故障的处理**
+### 4. 读写故障的处理
 
 <div align="center"> <img  src="pictures/hdfs-tolerance-3.jpg"/> </div>
 
 
 
-**第三部分：DataNode 故障处理**
+### 5. DataNode 故障处理
 
 <div align="center"> <img  src="pictures/hdfs-tolerance-4.jpg"/> </div>
 
 
 
-**副本布局策略**：
+### 6. 副本布局策略
 
 <div align="center"> <img  src="pictures/hdfs-tolerance-5.jpg"/> </div>
 
+
+## 四、HDFS的操作
+
+HDFS的操作跟shell的操作一致，在hadoop目录下进行操作，前缀hadoop fs 加上下面的各类操作，常用的，例如：
+
+-put（将文件上传）,
+
+-ls（显示当前仓库中有哪些文件），
+
+-cat（查看文件），
+
+-mkdir（创建一个文件夹），
+
+-get（从hdfs上获得一份文件到本地），
+
+-mv（移动某个文件到某个位置），
+
+-cp（将一个文件拷贝一份），
+
+-getmerge（将两个文件合并起来），
+
+-rm（删除一个文件），
+
+-rmdir（删除一个为空的文件夹），
+
+-rmr(此命令相当于-rm -r，删除一个文件夹),
+
+-text(查看某个文件),-R(递归显示某个文件夹中的文件)
+    
+上传一个本地文件到hdfs后，可以使用Hadoop fs -du -s -h /文件，可以查看文件的具体大小。
+    
+其他操作：
+
+```
+Usage: hadoop fs [generic options]
+    [-appendToFile <localsrc> ... <dst>]
+    [-cat [-ignoreCrc] <src> ...]
+    [-checksum <src> ...]
+    [-chgrp [-R] GROUP PATH...]
+    [-chmod [-R] <MODE[,MODE]... | OCTALMODE> PATH...]
+    [-chown [-R] [OWNER][:[GROUP]] PATH...]
+    [-copyFromLocal [-f] [-p] [-l] <localsrc> ... <dst>]
+    [-copyToLocal [-p] [-ignoreCrc] [-crc] <src> ... <localdst>]
+    [-count [-q] [-h] [-v] [-x] <path> ...]
+    [-cp [-f] [-p | -p[topax]] <src> ... <dst>]
+    [-createSnapshot <snapshotDir> [<snapshotName>]]
+    [-deleteSnapshot <snapshotDir> <snapshotName>]
+    [-df [-h] [<path> ...]]
+    [-du [-s] [-h] [-x] <path> ...]
+    [-expunge]
+    [-find <path> ... <expression> ...]
+    [-get [-p] [-ignoreCrc] [-crc] <src> ... <localdst>]
+    [-getfacl [-R] <path>]
+    [-getfattr [-R] {-n name | -d} [-e en] <path>]
+    [-getmerge [-nl] <src> <localdst>]
+    [-help [cmd ...]]
+    [-ls [-C] [-d] [-h] [-q] [-R] [-t] [-S] [-r] [-u] [<path> ...]]
+    [-mkdir [-p] <path> ...]
+    [-moveFromLocal <localsrc> ... <dst>]
+    [-moveToLocal <src> <localdst>]
+    [-mv <src> ... <dst>]
+    [-put [-f] [-p] [-l] <localsrc> ... <dst>]
+    [-renameSnapshot <snapshotDir> <oldName> <newName>]
+    [-rm [-f] [-r|-R] [-skipTrash] <src> ...]
+    [-rmdir [--ignore-fail-on-non-empty] <dir> ...]
+    [-setfacl [-R] [{-b|-k} {-m|-x <acl_spec>} <path>]|[--set <acl_spec> <path>]]
+    [-setfattr {-n name [-v value] | -x name} <path>]
+    [-setrep [-R] [-w] <rep> <path> ...]
+    [-stat [format] <path> ...]
+    [-tail [-f] <file>]
+    [-test -[defsz] <path>]
+    [-text [-ignoreCrc] <src> ...]
+    [-touchz <path> ...]
+    [-usage [cmd ...]]
+```
+
+## 五、HDFS API的初识
+
+` HDFS相关的代码存放在 BigData-Learning/Hadoop/codes/HDFS/HDFS-API初识/hdfs 目录中 `
+
+1. 首先在IDEA上，使用Maven来构建项目。创建一个maven-quickstart项目，引入下面的pom文件
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <groupId>org.example</groupId>
+  <artifactId>com.zyx.bigdata</artifactId>
+  <version>1.0-SNAPSHOT</version>
+
+  <name>com.zyx.bigdata</name>
+  <!-- FIXME change it to the project's website -->
+  <url>http://www.example.com</url>
+
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <maven.compiler.source>1.8</maven.compiler.source>
+    <maven.compiler.target>1.8</maven.compiler.target>
+    <hadoop.version>2.6.0-cdh5.15.1</hadoop.version>
+
+  </properties>
+  <repositories>
+    <repository>
+      <id>cloudera</id>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos</url>
+    </repository>
+  </repositories>
+  <dependencies>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.11</version>
+      <scope>test</scope>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-client</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+
+  </dependencies>
+
+  <build>
+    <pluginManagement><!-- lock down plugins versions to avoid using Maven defaults (may be moved to parent pom) -->
+      <plugins>
+        <!-- clean lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#clean_Lifecycle -->
+        <plugin>
+          <artifactId>maven-clean-plugin</artifactId>
+          <version>3.1.0</version>
+        </plugin>
+        <!-- default lifecycle, jar packaging: see https://maven.apache.org/ref/current/maven-core/default-bindings.html#Plugin_bindings_for_jar_packaging -->
+        <plugin>
+          <artifactId>maven-resources-plugin</artifactId>
+          <version>3.0.2</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-compiler-plugin</artifactId>
+          <version>3.8.0</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>2.22.1</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.0.2</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-install-plugin</artifactId>
+          <version>2.5.2</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-deploy-plugin</artifactId>
+          <version>2.8.2</version>
+        </plugin>
+        <!-- site lifecycle, see https://maven.apache.org/ref/current/maven-core/lifecycles.html#site_Lifecycle -->
+        <plugin>
+          <artifactId>maven-site-plugin</artifactId>
+          <version>3.7.1</version>
+        </plugin>
+        <plugin>
+          <artifactId>maven-project-info-reports-plugin</artifactId>
+          <version>3.0.0</version>
+        </plugin>
+      </plugins>
+    </pluginManagement>
+  </build>
+</project>
+
+
+```
+
+2. 使用HDFS API进行目录的创建，1.首先创建configuration 2.获取filesystem 3.设置相关的操作路径 4.调用api操作
+
+```java
+package org.example;
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.*;
+import org.apache.hadoop.io.IOUtils;
+
+import java.net.URI;
+
+/**
+ * 使用Java操作HDFS API
+ * 1.首先创建configuration
+ * 2.获取filesystem
+ * 3.设置相关的操作路径
+ * 4.调用api操作
+ */
+public class HdfsApp {
+
+    public static final String HDFS_PATH = "hdfs://willhope-pc:8020";
+
+    public static void main(String[] args) throws Exception {
+        Configuration configuration = new Configuration();
+        configuration.set("dfs.replication","1");
+        //使用此抽象类来访问hdfs文件系统，设置服务地址和配置信息，如果使用的是虚拟机，则需要传入当前用户名
+        FileSystem fileSystem = FileSystem.get(new URI(HDFS_PATH),configuration);
+
+        System.out.println("---------进行文件目录的创建---------");
+
+        boolean result = fileSystem.mkdirs(new Path("/hdfsapi/test"));
+        System.out.println(result);
+
+        System.out.println("---------上传本地文件到HDFS上---------");
+        fileSystem.copyFromLocalFile(new Path("/home/willhope/Desktop/Marvel.txt"),new Path("/hdfsapi/test"));
+
+
+        System.out.println("---------查看HDFS上某文件的内容---------");
+        //从hdfs上读取文件时，使用FSDataInputStream类
+        FSDataInputStream fsDataInputStream = fileSystem.open(new Path("/hdfsapi/test/Marvel.txt"));
+        IOUtils.copyBytes(fsDataInputStream, System.out,1024);
+
+        System.out.println("---------创建文件上传到HDFS上---------");
+        //向hdfs上写文件时，使用FSDataOutputStream类
+        FSDataOutputStream fsDataOutputStream = fileSystem.create(new Path("/hdfsapi/test/a.txt"));
+        fsDataOutputStream.writeUTF("My-bigdata-learning");
+        fsDataOutputStream.flush();
+        fsDataOutputStream.close();
+
+        System.out.println("---------对HDFS上文件名的更改---------");
+        boolean res = fileSystem.rename(new Path("/hdfsapi/test/a.txt"),new Path("/hdfsapi/test/hello.txt"));
+        System.out.println(res);
+
+        System.out.println("---------从HDFS上下载文件---------");
+        fileSystem.copyToLocalFile(new Path("/hdfsapi/test/hello.txt"),new Path("/home/willhope/Documents/"));
+
+        System.out.println("---------列出HDFS上某目录下所有文件信息---------");
+//        FileStatus[] fileStatuses = fileSystem.listStatus(new Path("/hdfsapi/test/"));
+//        System.out.println(Arrays.asList(fileStatuses).toString());
+        RemoteIterator<LocatedFileStatus> fileStatus = fileSystem.listFiles(new Path("/hdfsapi/test/"),true);
+        while (fileStatus.hasNext()){
+            LocatedFileStatus locatedFileStatus = fileStatus.next();
+            String isDir = locatedFileStatus.isDirectory()?"文件夹":"文件";
+            String permission = locatedFileStatus.getPermission().toString();
+            short replication = locatedFileStatus.getReplication();
+            long length = locatedFileStatus.getLen();
+            String path = locatedFileStatus.getPath().toString();
+
+            System.out.println(isDir+"\t"+permission+"\t"+replication+"\t"
+                +length+"\t"+path);
+        }
+
+        System.out.println("---------查看HDFS上某文件的块信息---------");
+        FileStatus fileStatus2 = fileSystem.getFileStatus(new Path("/hdfsapi/test/hello.txt"));
+        BlockLocation[] blocks = fileSystem.getFileBlockLocations(fileStatus2,0,fileStatus2.getLen());
+
+        for (BlockLocation block : blocks){
+            for (String name : block.getNames()){
+                System.out.println(name+":"+block.getOffset()+":"+block.getLength());
+            }
+        }
+
+        System.out.println("---------删除HDFS上的文件---------");
+        boolean rest = fileSystem.delete(new Path("/hdfsapi/test/hello.txt"),true);
+        System.out.println(rest);
+
+    }
+
+
+}
+
+```
+
+3. 
