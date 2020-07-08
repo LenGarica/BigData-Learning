@@ -383,4 +383,366 @@ public class HdfsApp {
 
 ```
 
-3. 
+## 六、HDFS实战
+
+1. 项目需求：使用HDFS JavaAPI完成HDFS文件系统上的文件的词频统计，即仅使用HDFS完成wordcount项目。
+
+2. 先自定义一个上下文类MyContext，这个类主要用来做缓存，暂存数据。
+
+```java
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class MyContext {
+    
+
+    //定义一个哈希表，用来做数据缓存
+    private Map<Object, Object> cacheMap = new HashMap<>();
+
+
+    public Map<Object, Object> getCacheMap(){
+        return cacheMap;
+    }
+
+    /**
+     * 写数据到缓存中去
+     * @param key 单词
+     * @param value 次数
+     */
+    public void write(Object key , Object value){
+        cacheMap.put(key, value);
+    }
+
+    /**
+     * 从缓存中获取值
+     * @param key 单词
+     * @return 单词对应词频
+     */
+    public Object get(Object key){
+        return cacheMap.get(key);
+    }
+
+}
+
+```
+
+3. 自定义一个MyMapper接口，用一个WordCountMapper类实现这个接口，WordCountMapper类主要用来将文本分割，并且进行统计。
+
+```java
+
+public interface MyMapper {
+    /**
+     *
+     * @param line 读取到的每行数据
+     * @param context 上下文/缓存
+     */
+    void map(String line , MyContext context);
+}
+
+
+/**
+ * 自定义单词处理类WordCountMapper，实现MyMapper接口
+ */
+public class WordCountMapper implements MyMapper{
+
+    @Override
+    public void map(String line, MyContext context) {
+
+        //按照文本的分隔符将读取的每行数据进行分割
+        String[] words = line.split("\t");
+
+        //遍历数组中
+        for(String word : words){
+            //将单词写入到上下文中
+            Object value = context.get(word);
+            if(value == null){ // 表示没出现过该单词
+                context.write(word,1);
+            }else{
+                int v = Integer.parseInt(value.toString());
+                context.write(word, v+1);  // 取出单词对应的次数+1
+            }
+        }
+
+    }
+}
+
+```
+
+4. 定义HDFSapp主类，操作hdfs。
+
+```java
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.util.Map;
+import java.util.Set;
+
+/**
+ * 使用HDFS API完成wordcount
+ * 需求：统计结果后，将统计结果输出到HDFS上
+ *
+ * 功能拆解：
+ *  读取HDFS上的文件  ==>使用HDFS  API
+ *  业务处理，按照分隔符分割 ==>抽象出Mapper
+ *  缓存处理结果  ==>Context
+ *  将结果写到HDFS上  ==>HDFS API
+ *
+ */
+public class HDFSapp {
+
+    public static final String HDFS_PATH = "hdfs://willhope-pc:8020";
+    public static final Configuration configuration = new Configuration();
+    public static final Path input = new Path("/hdfsapi/test/data.txt");
+    public static final Path output = new Path("/hdfsapi/output/");
+
+    public static void main(String[] args) throws Exception{
+
+        //设置副本数为1
+        configuration.set("dfs.replication","1");
+
+        //获取要操作的HDFS文件系统
+        FileSystem fileSystem = FileSystem.get(new URI(HDFS_PATH),configuration);
+        //列出当前文件的信息
+        RemoteIterator<LocatedFileStatus> remoteIterator = fileSystem.listFiles(input,false);
+        //定义缓存类
+        MyContext context = new MyContext();
+        //定义词频统计类
+        MyMapper mapper = new WordCountMapper();
+
+        while(remoteIterator.hasNext()){
+            LocatedFileStatus file = remoteIterator.next();
+            FSDataInputStream in = fileSystem.open(file.getPath());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+            String line = "";   // 用来接收读取的每行数据
+            while((line = reader.readLine())!=null){
+                mapper.map(line,context);
+            }
+            reader.close();
+            in.close();
+        }
+
+        Map<Object,Object> contextMap = context.getCacheMap();
+
+        //创建一个HDFS目录以及文件，将结果写入到此文件中
+        /** new Path(a,b) Resolve a child path against a parent path. */
+        FSDataOutputStream out = fileSystem.create(new Path(output , new Path("wc.out")));
+
+        //使此map可迭代
+        Set<Map.Entry<Object, Object>> entries = contextMap.entrySet();
+        //循环取出写入
+        for(Map.Entry<Object , Object> entry : entries){
+            out.write((entry.getKey().toString()+"\t"+entry.getValue()+"\n").getBytes());
+        }
+
+        out.close();
+        fileSystem.close();
+    }
+
+
+}
+
+
+```
+
+4. 对上面代码的重构。上面的代码中存在大量的地址代码，这属于硬编码，在编程中比较忌讳。因此，需要建立一个resources文件夹，将非业务逻辑的地址代码编写成一个文件hdfs.properties。
+
+```
+
+INPUT_PATH=/hdfsapi/test/data.txt
+OUTPUT_PATH=/hdfsapi/output/
+OUTPUT_FILE=wc.out
+HDFS_URI=hdfs://willhope-pc:8020
+
+```
+
+5. 定义一个读取properties的类ParamsUtils。
+
+```java
+
+import java.io.IOException;
+import java.util.Properties;
+
+/**
+ * 读取属性配置文件
+ */
+public class ParamsUtils {
+    private static Properties properties = new Properties();
+    static {
+        try {
+            properties.load(ParamsUtils.class.getClassLoader().getResourceAsStream("hdfs.properties"));
+        }catch (IOException e){
+            e.printStackTrace();
+        }
+    }
+
+    public static Properties getProperties() throws Exception{
+        return properties;
+    }
+
+}
+
+
+```
+
+6. 设置一个常量类Constants，将properties的内容，设置成常量
+
+```java
+
+public class Constants {
+
+    public static final String INPUT_PATH ="INPUT_PATH";
+    public static final String OUTPUT_PATH ="OUTPUT_PATH";
+    public static final String OUTPUT_FILE ="OUTPUT_FILE";
+    public static final String HDFS_URI ="HDFS_URI";
+
+}
+
+```
+
+7. 重构HDFSapp类
+
+```java
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.*;
+import java.io.BufferedReader;
+import java.io.InputStreamReader;
+import java.net.URI;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
+/**
+ * 使用HDFS API完成wordcount
+ * 需求：统计结果后，将统计结果输出到HDFS上
+ *
+ * 功能拆解：
+ *  读取HDFS上的文件  ==>使用HDFS  API
+ *  业务处理，按照分隔符分割 ==>抽象出Mapper
+ *  缓存处理结果  ==>Context
+ *  将结果写到HDFS上  ==>HDFS API
+ *
+ */
+public class HDFSapp2 {
+
+
+    public static void main(String[] args) throws Exception{
+        Properties properties = ParamsUtils.getProperties();
+        Configuration configuration = new Configuration();
+        //设置副本数为1
+        configuration.set("dfs.replication","1");
+        Path input = new Path(properties.getProperty(Constants.INPUT_PATH));
+        Path output = new Path(properties.getProperty(Constants.OUTPUT_PATH));
+        //获取要操作的HDFS文件系统
+        FileSystem fileSystem = FileSystem.get(new URI(properties.getProperty(Constants.HDFS_URI)),configuration);
+        //列出当前文件的信息和块信息
+        RemoteIterator<LocatedFileStatus> remoteIterator = fileSystem.listFiles(input,false);
+        MyContext context = new MyContext();
+        MyMapper mapper = new WordCountMapper();
+
+        while(remoteIterator.hasNext()){
+            LocatedFileStatus file = remoteIterator.next();
+            FSDataInputStream in = fileSystem.open(file.getPath());
+            BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+
+            String line = "";   // 用来接收读取的每行数据
+            while((line = reader.readLine())!=null){
+                mapper.map(line,context);
+            }
+            reader.close();
+            in.close();
+        }
+
+        Map<Object,Object> contextMap = context.getCacheMap();
+
+        //创建一个HDFS目录以及文件，将结果写入到此文件中
+        /** new Path(a,b) Resolve a child path against a parent path. */
+        FSDataOutputStream out = fileSystem.create(new Path(output , new Path(properties.getProperty(Constants.OUTPUT_FILE))));
+
+        //使此map可迭代
+        Set<Map.Entry<Object, Object>> entries = contextMap.entrySet();
+        //循环取出写入
+        for(Map.Entry<Object , Object> entry : entries){
+            out.write((entry.getKey().toString()+"\t"+entry.getValue()+"\n").getBytes());
+        }
+
+        out.close();
+        fileSystem.close();
+    }
+
+
+}
+
+```
+
+8. 上面的代码运行后，发现，处理的数据，没有忽略大小写，因此更改WordCountMapper的逻辑。只需要追加toLowerCase()，使得所有的字符都转换为小写。String[] words = line.toLowerCase().split("\t");
+
+```java
+
+public class WordCountMapper implements MyMapper{
+
+    @Override
+    public void map(String line, MyContext context) {
+
+        //按照文本的分隔符将读取的每行数据进行分割
+        String[] words = line.toLowerCase().split("\t");
+
+        //遍历数组中
+        for(String word : words){
+            //将单词写入到上下文中
+            Object value = context.get(word);
+            if(value == null){ // 表示没出现过该单词
+                context.write(word,1);
+            }else{
+                int v = Integer.parseInt(value.toString());
+                context.write(word, v+1);  // 取出单词对应的次数+1
+            }
+        }
+
+    }
+}
+
+```
+
+9. 通过上面的代码，又发现一个问题，MyMapper mapper = new WordCountMapper();是在主函数中定义的，如果，mapper的逻辑更改了，或者有其他的不同的业务要处理，要添加新的类，这样就得又重新定义。因此，为了方便处理逻辑的更换，把处理逻辑的类写到properties中，使用反射进行加载。
+
+```
+
+INPUT_PATH=/hdfsapi/test/data.txt
+OUTPUT_PATH=/hdfsapi/output/
+OUTPUT_FILE=wc.out
+HDFS_URI=hdfs://willhope-pc:8020
+public static final String MAPPER_CLASS="MAPPER_CLASS";
+
+```
+
+同时，在Constants类中，添加常量MAPPER_CLASS。
+
+```java
+
+public class Constants {
+
+    public static final String INPUT_PATH ="INPUT_PATH";
+    public static final String OUTPUT_PATH ="OUTPUT_PATH";
+    public static final String OUTPUT_FILE ="OUTPUT_FILE";
+    public static final String HDFS_URI ="HDFS_URI";
+    public static final String MAPPER_CLASS="MAPPER_CLASS";
+
+}
+
+```
+
+再将HDFSapp中的MyMapper mapper = new WordCountMapper();更改成下面的代码：
+
+```java
+
+  //通过反射加载类，创建对象
+  Class<?> clazz= Class.forName(properties.getProperty(Constants.MAPPER_CLASS));
+  MyMapper mapper = (MyMapper)clazz.newInstance();
+
+```
