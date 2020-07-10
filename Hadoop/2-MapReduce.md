@@ -1,3 +1,6 @@
+` 目录 `
+
+
 ## 一、MapReduce概述
 
 源自Google的MapReduce论文，论文发表于2004年12月。
@@ -13,13 +16,13 @@ Hadoop MapReduce 是一个分布式计算框架，用于编写批处理应用程
 
 1. **input** : 读取文本文件，输入数据；
 
-2. **splitting** : 框架程序自动执行此部分，将文件按照行进行拆分，此时得到的 `K1` 行数，`V1` 表示对应行的文本内容；
+2. **splitting** : 将文件按照行进行拆分，此时得到的 `K1` 行数，`V1` 表示对应行的文本内容；
 
-3. **mapping** : 开发人员要特别关注，设置拆分规则。此部分并行将每一行按照空格进行拆分，拆分得到的 `List(K2,V2)`，其中 `K2` 代表每一个单词，由于是做词频统计，所以 `V2` 的值为 1，代表出现 1 次；
+3. **mapping** : 此部分并行将每一行按照拆分规则进行拆分，拆分规则有程序员编写，拆分得到的 `List(K2,V2)`，其中 `K2` 代表每一个单词，由于是做词频统计，所以 `V2` 的值为 1，代表出现 1 次；
 
-4. **shuffling**： 框架程序自动执行此部分，由于 `Mapping` 操作可能是在不同的机器上并行处理的，所以需要通过 `shuffling` 将相同 `key` 值的数据分发到同一个节点上去合并，这样才能统计出最终的结果，此时得到 `K2` 为每一个单词，`List(V2)` 为可迭代集合，`V2` 就是 Mapping 中的 V2；
+4. **shuffling** ： 由于 `Mapping` 操作可能是在不同的机器上并行处理的，所以需要通过 `shuffling` 将相同 `key` 值的数据分发到同一个节点上去合并，这样才能统计出最终的结果，此时得到 `K2` 为每一个单词，`List(V2)` 为可迭代集合，`V2` 就是 Mapping 中的 V2；
 
-5. **Reducing** : 开发人员要特别关注，设置整合归并规则。这里的案例是统计单词出现的总次数，所以 `Reducing` 对 `List(V2)` 进行归约求和操作，最终输出。
+5. **Reducing** : 设置整合归并规则。这里的案例是统计单词出现的总次数，所以 `Reducing` 对 `List(V2)` 进行归约求和操作，最终输出。
 
 MapReduce 编程模型中 `splitting` 和 `shuffing` 操作都是由框架实现的，需要我们自己编程实现的只有 `mapping` 和 `reducing`，这也就是 MapReduce 这个称呼的来源。MapReduce 框架专门用于 `<key，value>` 键值对处理，它将作业的输入视为一组 `<key，value>` 对，并生成一组 `<key，value>` 对作为输出。输出和输出的 `key` 和 `value` 都必须实现[Writable](http://hadoop.apache.org/docs/stable/api/org/apache/hadoop/io/Writable.html) 接口。
 
@@ -48,11 +51,11 @@ MapReduce 编程模型中 `splitting` 和 `shuffing` 操作都是由框架实现
 
 不使用 combiner 的情况：
 
-<div align="center"> <img  width="600px"  src="../pictures/mapreduce-without-combiners.png"/> </div>
+<div align="center"> <img  width="600px"  src="pictures/mapreduce-without-combiners.png"/> </div>
 
 使用 combiner 的情况：
 
-<div align="center"> <img width="600px"  src="../pictures/mapreduce-with-combiners.png"/> </div>
+<div align="center"> <img width="600px"  src="pictures/mapreduce-with-combiners.png"/> </div>
 
 
 
@@ -64,13 +67,17 @@ MapReduce 编程模型中 `splitting` 和 `shuffing` 操作都是由框架实现
 
 
 
-## 四、MapReduce词频统计案例
+## 四、MapReduce初识
+
+WordCount词频统计案例
+
+> 项目代码：BigData-Learning/Hadoop/codes/MapReduce/mrpreliminary
 
 ### 4.1 项目简介
 
 这里给出一个经典的词频统计的案例：统计如下样本数据中每个单词出现的次数。
 
-```properties
+```
 Spark	HBase
 Hive	Flink	Storm	Hadoop	HBase	Spark
 Flink
@@ -86,46 +93,54 @@ Hive	Flink	Hadoop
 HBase	Hive
 ```
 
-为方便大家开发，我在项目源码中放置了一个工具类 `WordCountDataUtils`，用于模拟产生词频统计的样本，生成的文件支持输出到本地或者直接写到 HDFS 上。
+### 4.2 WordCountMapper
 
-> 项目完整源码下载地址：[hadoop-word-count](https://github.com/heibaiying/BigData-Notes/tree/master/code/Hadoop/hadoop-word-count)
-
-
-
-### 4.2 项目依赖
-
-想要进行 MapReduce 编程，需要导入 `hadoop-client` 依赖：
-
-```xml
-<dependency>
-    <groupId>org.apache.hadoop</groupId>
-    <artifactId>hadoop-client</artifactId>
-    <version>${hadoop.version}</version>
-</dependency>
-```
-
-### 4.3 WordCountMapper
-
-将每行数据按照指定分隔符进行拆分。这里需要注意在 MapReduce 中必须使用 Hadoop 定义的类型，因为 Hadoop 预定义的类型都是可序列化，可比较的，所有类型均实现了 `WritableComparable` 接口。
+自定义mapper类，实现将每行数据按照指定分隔符进行拆分，继承Hadoop提供的Mapper类，并且重写map函数，在map函数中，实现拆分的逻辑。这里需要注意在 MapReduce 中必须使用 Hadoop 定义的类型，因为 Hadoop 预定义的类型都是[可序列化](https://www.jianshu.com/p/89c2a19772e2)，可比较的，所有类型均实现了 `WritableComparable` 接口。
 
 ```java
-public class WordCountMapper extends Mapper<LongWritable, Text, Text, IntWritable> {
+import org.apache.hadoop.mapreduce.Mapper;
+
+import java.io.IOException;
+
+/**
+ * KEYIN: Map任务读取数据的key，offset，是每行数据的起始位置的偏移量，也可直接理解为行数，Long类型
+ * VALUEIN: Map任务读取数据的value，其实就是一行行的字符串，String类型
+ *
+ * 其实keyin，valuein是splitting阶段执行的将文件按照行进行拆分操作，此时得到的keyin表示行数，valuein表示对应行的文本内容；
+ *
+ * 经过Mapping操作，自定义拆分规则后，得到下面(KEYOUT,VALUEOUT)
+ *
+ * KEYOUT: Map任务结束后的输出key，词频统计，此key就是单词，String类型
+ * VALUEOUT: Map任务结束的输出value，为每个单词追加数字1，Interger，或者Long类型
+ *
+ * 其中keyout，valueout是一个list，即list(keyout,valueout)
+ * 例如 hello    word    hello，输出后，就是list(hello,1) list(word,1) list(hello,1)
+ *
+ * Long,String,Integer是Java里的数据类型，但是在Hadoop中，这些类型要使用Hadoop自定义的类型。对应的类型如下：
+ * LongWritable，Text，IntWritable
+ *
+ */
+public class WordCountMapper extends Mapper<LongWritable,Text,Text, IntWritable> {
 
     @Override
-    protected void map(LongWritable key, Text value, Context context) throws IOException, 
-                                                                      InterruptedException {
-        String[] words = value.toString().split("\t");
-        for (String word : words) {
-            context.write(new Text(word), new IntWritable(1));
-        }
-    }
+    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
 
+        // 把value对应的行数据按照指定的分隔符拆分
+        String[] words = value.toString().split("\t");
+
+        for (String word : words){
+            //使用上下文将结果写出去，当前的word是Java的String类型，追加数字是int类型，要转换为Hadoop的类型，这些类型都是类，因此做一个封装
+            context.write(new Text(word) , new IntWritable(1));
+        }
+
+    }
 }
+
 ```
 
 `WordCountMapper` 对应下图的 Mapping 操作：
 
-<div align="center"> <img  src="../pictures/hadoop-code-mapping.png"/> </div>
+<div align="center"> <img  src="pictures/hadoop-code-mapping.png"/> </div>
 
 
 
@@ -146,34 +161,84 @@ public class Mapper<KEYIN, VALUEIN, KEYOUT, VALUEOUT> {
 
 
 
-### 4.4 WordCountReducer
+### 4.3 WordCountReducer
 
 在 Reduce 中进行单词出现次数的统计：
 
 ```java
-public class WordCountReducer extends Reducer<Text, IntWritable, Text, IntWritable> {
+package org.example.mapreduce.mrpreliminary;
 
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+import java.io.IOException;
+import java.util.Iterator;
+
+public class WordCountReducer extends Reducer<Text, IntWritable , Text , IntWritable> {
+
+    /**
+     *  mapping到reducing阶段中间有一个shuffling,
+     *  通过 shuffling 将相同 key 值的数据分发到同一个节点上去合并，
+     *  这样才能统计出最终的结果，
+     *  此时得到 K2 为每一个单词，
+     *  List(V2) 为可迭代集合，
+     *  V2 就是 Mapping 中的 V2；
+     *
+     *  例如 hello    word    hello
+     *
+     *  map结束输出list(hello,1)，list(word,1)，list(hello,1)
+     *  shuffle结束后输出 hello，list(1,1)  word，list(1)
+     *  reduce接收  hello，list(1,1)  word，list(1)进行处理
+     *
+     * @param key 单词
+     * @param values 可迭代的list集合
+     * @param context 上下文
+     * @throws IOException
+     * @throws InterruptedException
+     */
     @Override
-    protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, 
-                                                                                  InterruptedException {
+    protected void reduce(Text key, Iterable<IntWritable> values, Context context) throws IOException, InterruptedException {
+        //定义count用来计数
         int count = 0;
-        for (IntWritable value : values) {
+
+        //values是一个可以迭代的集合，将其赋值给一个迭代器
+        Iterator<IntWritable> iterator = values.iterator();
+
+        //通过迭代器取出集合中的元素
+        while(iterator.hasNext()){
+            IntWritable value = iterator.next();
+            //使用get方法，将取出的单个元素返回成int类型
             count += value.get();
         }
-        context.write(key, new IntWritable(count));
+
+        //将结果写出去
+        context.write(key , new IntWritable(count));
     }
 }
+
 ```
 
 如下图，`shuffling` 的输出是 reduce 的输入。这里的 key 是每个单词，values 是一个可迭代的数据类型，类似 `(1,1,1,...)`。
 
-<div align="center"> <img  src="../pictures/hadoop-code-reducer.png"/> </div>
+<div align="center"> <img  src="pictures/hadoop-code-reducer.png"/> </div>
 
 ### 4.4 WordCountApp
 
 组装 MapReduce 作业，并提交到服务器运行，代码如下：
 
 ```java
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+import java.net.URI;
 
 /**
  * 组装作业 并提交到集群运行
@@ -182,31 +247,26 @@ public class WordCountApp {
 
 
     // 这里为了直观显示参数 使用了硬编码，实际开发中可以通过外部传参
-    private static final String HDFS_URL = "hdfs://192.168.0.107:8020";
-    private static final String HADOOP_USER_NAME = "root";
+    private static final String HDFS_PATH = "hdfs://willhope-pc:8020";
+    //如果使用虚拟机则要定义下面的用户名，以防止权限不足
+//    private static final String HADOOP_USER_NAME = "root";
 
     public static void main(String[] args) throws Exception {
 
-        //  文件输入路径和输出路径由外部传参指定
-        if (args.length < 2) {
-            System.out.println("Input and output paths are necessary!");
-            return;
-        }
-
         // 需要指明 hadoop 用户名，否则在 HDFS 上创建目录时可能会抛出权限不足的异常
-        System.setProperty("HADOOP_USER_NAME", HADOOP_USER_NAME);
+//        System.setProperty("HADOOP_USER_NAME", HADOOP_USER_NAME);
 
         Configuration configuration = new Configuration();
         // 指明 HDFS 的地址
-        configuration.set("fs.defaultFS", HDFS_URL);
-
+        configuration.set("fs.defaultFS", HDFS_PATH);
+        configuration.set("dfs.replication","1");
         // 创建一个 Job
         Job job = Job.getInstance(configuration);
 
-        // 设置运行的主类
+        // 设置Job对应的主类
         job.setJarByClass(WordCountApp.class);
 
-        // 设置 Mapper 和 Reducer
+        // 设置Job对应参数：设置 Mapper 和 Reducer处理类
         job.setMapperClass(WordCountMapper.class);
         job.setReducerClass(WordCountReducer.class);
 
@@ -219,17 +279,19 @@ public class WordCountApp {
         job.setOutputValueClass(IntWritable.class);
 
         // 如果输出目录已经存在，则必须先删除，否则重复运行程序时会抛出异常
-        FileSystem fileSystem = FileSystem.get(new URI(HDFS_URL), configuration, HADOOP_USER_NAME);
-        Path outputPath = new Path(args[1]);
+//        FileSystem fileSystem = FileSystem.get(new URI(HDFS_PATH), configuration, HADOOP_USER_NAME);
+        FileSystem fileSystem = FileSystem.get(new URI(HDFS_PATH), configuration);
+        Path inputPath = new Path("/wordcount/input");
+        Path outputPath = new Path("/wordcount/output");
         if (fileSystem.exists(outputPath)) {
             fileSystem.delete(outputPath, true);
         }
 
         // 设置作业输入文件和输出文件的路径
-        FileInputFormat.setInputPaths(job, new Path(args[0]));
+        FileInputFormat.setInputPaths(job, inputPath);
         FileOutputFormat.setOutputPath(job, outputPath);
 
-        // 将作业提交到群集并等待它完成，参数设置为 true 代表打印显示对应的进度
+        // 使用wautForCompletion方法，将作业提交到群集并等待它完成，参数设置为 true 代表打印显示对应的进度
         boolean result = job.waitForCompletion(true);
 
         // 关闭之前创建的 fileSystem
@@ -255,23 +317,86 @@ public class WordCountApp {
 使用以下命令提交作业：
 
 ```shell
-hadoop jar /usr/appjar/hadoop-word-count-1.0.jar \
-com.heibaiying.WordCountApp \
-/wordcount/input.txt /wordcount/output/WordCountApp
+hadoop jar /willhope/usrlib/hadoop-word-count-1.0.jar \
+org.example.mapreduce.mrpreliminary.WordCountApp \
+/wordcount/input/data.txt /wordcount/output/
 ```
 
-作业完成后查看 HDFS 上生成目录：
 
-```shell
-# 查看目录
-hadoop fs -ls /wordcount/output/WordCountApp
+### 4.6 本地测试
 
-# 查看统计结果
-hadoop fs -cat /wordcount/output/WordCountApp/part-r-00000
+在IDEA的当前项目中，创建一个input目录，在此目录中放入要处理的数据文件。使用本地测试运行wordcount，map和reduce不变，只需要更改driver类。代码如下：
+
+```java
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+/**
+ * 使用本地文件进行统计，将结果输出到本地
+ */
+public class WordCountLocalApp {
+
+
+
+    public static void main(String[] args) throws Exception {
+
+
+        Configuration configuration = new Configuration();
+        // 指明 HDFS 的地址
+        configuration.set("dfs.replication","1");
+        // 创建一个 Job
+        Job job = Job.getInstance(configuration);
+
+        // 设置Job对应的主类
+        job.setJarByClass(WordCountLocalApp.class);
+
+        // 设置Job对应参数：设置 Mapper 和 Reducer处理类
+        job.setMapperClass(WordCountMapper.class);
+        job.setReducerClass(WordCountReducer.class);
+
+        // 设置 Mapper 输出 key 和 value 的类型
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(IntWritable.class);
+
+        // 设置 Reducer 输出 key 和 value 的类型
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(IntWritable.class);
+
+
+        // 设置作业输入文件和输出文件的路径
+        FileInputFormat.setInputPaths(job, new Path("input"));
+        FileOutputFormat.setOutputPath(job, new Path("output"));
+
+        // 使用wautForCompletion方法，将作业提交到群集并等待它完成，参数设置为 true 代表打印显示对应的进度
+        boolean result = job.waitForCompletion(true);
+
+
+        // 根据作业结果,终止当前运行的 Java 虚拟机,退出程序
+        System.exit(result ? 0 : -1);
+
+    }
+}
+
+
 ```
 
-<div align="center"> <img  src="../pictures/hadoop-wordcountapp.png"/> </div>
+### 4.7 数据文本忽略大小写问题
 
+如果想要的结果不区分到小写，让结果转换成大写或小写，只需要在Mapper类map函数写出数据时，设置大小写。
+
+```java
+
+    //转换为小写
+    context.write(new Text(word.toLowerCase()) , new IntWritable(1));
+    //转换为大写
+    context.write(new Text(word.toUpperCase()) , new IntWritable(1));
+
+```
 
 
 ## 五、词频统计案例进阶之Combiner
@@ -291,15 +416,15 @@ job.setCombinerClass(WordCountReducer.class);
 
 没有加入 `combiner` 的打印日志：
 
-<div align="center"> <img  src="../pictures/hadoop-no-combiner.png"/> </div>
+<div align="center"> <img  src="pictures/hadoop-no-combiner.png"/> </div>
 
 加入 `combiner` 后的打印日志如下：
 
-<div align="center"> <img  src="../pictures/hadoop-combiner.png"/> </div>
+<div align="center"> <img  src="pictures/hadoop-combiner.png"/> </div>
 
 这里我们只有一个输入文件并且小于 128M，所以只有一个 Map 进行处理。可以看到经过 combiner 后，records 由 `3519` 降低为 `6`(样本中单词种类就只有 6 种)，在这个用例中 combiner 就能极大地降低需要传输的数据量。
 
-
+Combiner有着局限性，不适合除法，求平均等操作。
 
 ## 六、词频统计案例进阶之Partitioner
 
@@ -348,4 +473,6 @@ job.setNumReduceTasks(WordCountDataUtils.WORD_LIST.size());
 
 执行结果如下，分别生成 6 个文件，每个文件中为对应单词的统计结果：
 
-<div align="center"> <img  src="../pictures/hadoop-wordcountcombinerpartition.png"/> </div>
+<div align="center"> <img  src="pictures/hadoop-wordcountcombinerpartition.png"/> </div>
+
+

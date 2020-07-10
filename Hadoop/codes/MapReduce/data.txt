@@ -1,0 +1,13 @@
+Spark	HBase
+Hive	Flink	Storm	Hadoop	HBase	Spark
+Flink
+HBase	Storm
+HBase	Hadoop	Hive	Flink
+HBase	Flink	Hive	Storm
+Hive	Flink	Hadoop
+HBase	Hive
+Hadoop	Spark	HBase	Storm
+HBase	Hadoop	Hive	Flink
+HBase	Flink	Hive	Storm
+Hive	Flink	Hadoop
+HBase	Hive
