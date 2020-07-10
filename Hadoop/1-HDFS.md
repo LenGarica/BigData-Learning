@@ -208,7 +208,7 @@ Usage: hadoop fs [generic options]
 
 ## 五、HDFS API的初识
 
-` HDFS相关的代码存放在 BigData-Learning/Hadoop/codes/HDFS/HDFS-API初识/hdfs 目录中 `
+> 相关的代码存放在 BigData-Learning/Hadoop/codes/HDFS/HDFS-API初识 目录中
 
 1. 首先在IDEA上，使用Maven来构建项目。创建一个maven-quickstart项目，引入下面的pom文件
 
@@ -401,6 +401,8 @@ public class HdfsApp {
 ```
 
 ## 六、HDFS实战
+
+> 相关的代码存放在 BigData-Learning/Hadoop/codes/HDFS/HDFS-实战 目录中
 
 1. 项目需求：使用HDFS JavaAPI完成HDFS文件系统上的文件的词频统计，即仅使用HDFS完成wordcount项目。
 
