@@ -1,3 +1,28 @@
+` 目录 `
+
+- [一、介绍](#一介绍)
+- [二、HDFS 设计原理](#二hdfs-设计原理)    
+  - [2.1 HDFS 设计目标](#21-hdfs-设计目标)    
+  - [2.2 HDFS 架构（非常重要，面试重点）](#22-hdfs-架构非常重要面试重点)    
+  - [2.3 详解文件系统命名空间](#23-详解文件系统命名空间)    
+  - [2.5 数据复制](#25-数据复制)    
+  - [2.6 数据复制的实现原理](#26-数据复制的实现原理)    
+  - [2.7  副本的选择](#27--副本的选择)    
+  - [2.8 架构的稳定性](#28-架构的稳定性)        
+  - [1. 心跳机制和重新复制](#1-心跳机制和重新复制)        
+  - [2. 数据的完整性](#2-数据的完整性)        
+  - [3.元数据的磁盘故障](#3元数据的磁盘故障)        
+  - [4.支持快照](#4支持快照)
+- [三、图解HDFS存储原理](#三图解hdfs存储原理)    
+  - [1. HDFS写数据原理](#1-hdfs写数据原理)    
+  - [2. HDFS读数据原理](#2-hdfs读数据原理)    
+  - [3. HDFS故障类型和其检测方法](#3-hdfs故障类型和其检测方法)    
+  - [4. 读写故障的处理](#4-读写故障的处理)    
+  - [5. DataNode 故障处理](#5-datanode-故障处理)    
+  - [6. 副本布局策略](#6-副本布局策略)
+- [四、HDFS的操作](#四hdfs的操作)
+- [五、HDFS API的初识](#五hdfs-api的初识)
+- [六、HDFS实战](#六hdfs实战)
 
 ## 一、介绍
 
@@ -116,31 +141,23 @@ HDFS 的 ` 文件系统命名空间 ` 的层次结构与大多数文件系统类
 
 ## 四、HDFS的操作
 
-HDFS的操作跟shell的操作一致，在hadoop目录下进行操作，前缀hadoop fs 加上下面的各类操作，常用的，例如：
+HDFS的操作跟shell的操作一致，在hadoop目录下进行操作，前缀hadoop fs 或者hdfs dfs加上下面的各类操作，常用的，例如：
 
--put（将文件上传）,
-
--ls（显示当前仓库中有哪些文件），
-
--cat（查看文件），
-
--mkdir（创建一个文件夹），
-
--get（从hdfs上获得一份文件到本地），
-
--mv（移动某个文件到某个位置），
-
--cp（将一个文件拷贝一份），
-
--getmerge（将两个文件合并起来），
-
--rm（删除一个文件），
-
--rmdir（删除一个为空的文件夹），
-
--rmr(此命令相当于-rm -r，删除一个文件夹),
-
--text(查看某个文件),-R(递归显示某个文件夹中的文件)
+操作 | 功能 |  
+-|-|-
+-put | 将文件上传 
+-ls | 显示当前仓库中有哪些文件
+-cat |查看文件
+-mkdir | 创建一个文件夹
+-get | 从hdfs上获得一份文件到本地
+-mv | 移动某个文件到某个位置
+-cp | 将一个文件拷贝一份
+-getmerge | 将两个文件合并起来
+-rm | 删除一个文件
+-rmdir | 删除一个为空的文件夹
+-rmr | 此命令相当于-rm -r，删除一个文件夹
+-text | 查看某个文件
+-R | 递归显示某个文件夹中的文件
     
 上传一个本地文件到hdfs后，可以使用Hadoop fs -du -s -h /文件，可以查看文件的具体大小。
     
@@ -740,9 +757,8 @@ public class Constants {
 再将HDFSapp中的MyMapper mapper = new WordCountMapper();更改成下面的代码：
 
 ```java
-
-  //通过反射加载类，创建对象
-  Class<?> clazz= Class.forName(properties.getProperty(Constants.MAPPER_CLASS));
-  MyMapper mapper = (MyMapper)clazz.newInstance();
+//通过反射加载类，创建对象
+Class<?> clazz= Class.forName(properties.getProperty(Constants.MAPPER_CLASS));
+MyMapper mapper = (MyMapper)clazz.newInstance();
 
 ```
