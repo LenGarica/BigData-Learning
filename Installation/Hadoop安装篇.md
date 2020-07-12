@@ -10,13 +10,6 @@
     - [Hadoop安装](#hadoop安装)
     - [Hive部署](#hive部署)
     - [Hive配置遇到的坑](#hive配置遇到的坑)
-- [Hadoop集群安装篇](#hadoop集群安装篇)
-    - [集群规划](#集群规划)
-    - [前置条件](#前置条件)
-    - [配置免密登录](#配置免密登录)
-    - [集群搭建](#集群搭建)
-    - [提交服务到集群](#提交服务到集群)
-
 
 ## Hadoop单机安装篇
 
@@ -275,27 +268,27 @@ export PATH=/home/willhope/anaconda3/bin:$PATH
 
 13. vi mapred-site.xml
 
-```
-<configuration>
-    <property>
-        <name>mapreduce.framework.name</name>
-        <value>yarn</value>
-    </property>
-</configuration>
+    ```xml
+    <configuration>
+        <property>
+            <name>mapreduce.framework.name</name>
+            <value>yarn</value>
+        </property>
+    </configuration>
 
-```
+    ```
 
 14. vi yarn-site.xml
 
-```
-<configuration>
-    <property>
-        <name>yarn.nodemanager.aux-services</name>
-        <value>mapreduce_shuffle</value>
-    </property>
-</configuration>
+    ```xml
+    <configuration>
+        <property>
+            <name>yarn.nodemanager.aux-services</name>
+            <value>mapreduce_shuffle</value>
+        </property>
+    </configuration>
 
-```
+    ```
 
 
 15. vi slaves;　　　　　将里面的localhost改成电脑的用户名，如果是单机linux而非虚拟机，则可以不用更改
@@ -410,212 +403,4 @@ HADOOP_HOME=/home/willhope/app/hadoop-2.6.0-cdh5.15.1（注意更换你的地址
 搜到网上各种教程，说是hive默认的是derby，要进行初始化。然而跟着网上的教程做，发现依然无法解决上面的错。
 
 最终，解决方法是，删除原来的hive，然后重新配置好hive，在启动hive之前，进行初始化，进入到bin目录，执行 ./schematool -dbType mysql -initSchema -verbose，schemaTool completed则表明成功，并且会完成在mysql中数据库的创建（也就是hive-site.xml中配置的数据库），此时数据库中的表都是空的，没有内容。然后在bin下执行hive，执行create database test_db后，表中就有内容了，以及其他查询操作，即可成功。（在hive执行sql语句时，会发现一个ssl警告，可以忽略，也可以在hive-site.xml，配置数据库名字那一行createDatabaseIfNotexist=true后面添加上;ssl=true）
-
-## Hadoop集群安装篇
-
-### 集群规划
-
-这里搭建一个 3 节点的 Hadoop 集群，其中三台主机均部署 `DataNode` 和 `NodeManager` 服务，但只有 hadoop001 上部署 `NameNode` 和 `ResourceManager` 服务。
-
-<div align="center"> <img  src="../pictures/hadoop集群规划.png"/> </div>
-
-### 前置条件
-
-Hadoop 的运行依赖 JDK，需要预先安装。使用虚拟机的话，可以直接镜像复制。
-
-### 配置免密登录
-
-1. 生成密匙
-
-在每台主机上使用 `ssh-keygen` 命令生成公钥私钥对：
-
-```shell
-ssh-keygen
-```
-
-2. 免密登录
-
-将 `hadoop001` 的公钥写到本机和远程机器的 ` ~/ .ssh/authorized_key` 文件中：
-
-```shell
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop001
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop002
-ssh-copy-id -i ~/.ssh/id_rsa.pub hadoop003
-```
-
-3. 验证免密登录
-
-```she
-ssh hadoop002
-ssh hadoop003
-```
-
-### 集群搭建
-
-1. 下载并解压
-
-下载 Hadoop。这里我下载的是 CDH 版本 Hadoop，下载地址为：http://archive.cloudera.com/cdh5/cdh/5/
-
-```shell
-# tar -zvxf hadoop-2.6.0-cdh5.15.1.tar.gz 
-```
-
-2. 配置环境变量
-
-编辑 `profile` 文件：
-
-```shell
-# vim /etc/profile
-```
-
-增加如下配置：
-
-```
-export HADOOP_HOME=/usr/app/hadoop-2.6.0-cdh5.15.2
-export  PATH=${HADOOP_HOME}/bin:$PATH
-```
-
-执行 `source` 命令，使得配置立即生效：
-
-```shell
-# source /etc/profile
-```
-
-3. 修改配置
-
-进入 `${HADOOP_HOME}/etc/hadoop` 目录下，修改配置文件。各个配置文件内容如下：
-
-4. hadoop-env.sh
-
-```shell
-# 指定JDK的安装位置
-export JAVA_HOME=/usr/java/jdk1.8.0_201/
-```
-
-5. core-site.xml
-
-```xml
-<configuration>
-    <property>
-        <!--指定 namenode 的 hdfs 协议文件系统的通信地址-->
-        <name>fs.defaultFS</name>
-        <value>hdfs://hadoop001:8020</value>
-    </property>
-    <property>
-        <!--指定 hadoop 集群存储临时文件的目录-->
-        <name>hadoop.tmp.dir</name>
-        <value>/home/hadoop/tmp</value>
-    </property>
-</configuration>
-```
-
-6. hdfs-site.xml
-
-```xml
-<property>
-      <!--namenode 节点数据（即元数据）的存放位置，可以指定多个目录实现容错，多个目录用逗号分隔-->
-    <name>dfs.namenode.name.dir</name>
-    <value>/home/hadoop/namenode/data</value>
-</property>
-<property>
-      <!--datanode 节点数据（即数据块）的存放位置-->
-    <name>dfs.datanode.data.dir</name>
-    <value>/home/hadoop/datanode/data</value>
-</property>
-```
-
-7. yarn-site.xml
-
-```xml
-<configuration>
-    <property>
-        <!--配置 NodeManager 上运行的附属服务。需要配置成 mapreduce_shuffle 后才可以在 Yarn 上运行 MapReduce 程序。-->
-        <name>yarn.nodemanager.aux-services</name>
-        <value>mapreduce_shuffle</value>
-    </property>
-    <property>
-        <!--resourcemanager 的主机名-->
-        <name>yarn.resourcemanager.hostname</name>
-        <value>hadoop001</value>
-    </property>
-</configuration>
-
-```
-
-8.  mapred-site.xml
-
-```xml
-<configuration>
-    <property>
-        <!--指定 mapreduce 作业运行在 yarn 上-->
-        <name>mapreduce.framework.name</name>
-        <value>yarn</value>
-    </property>
-</configuration>
-```
-
-9. slaves
-
-配置所有从属节点的主机名或 IP 地址，每行一个。所有从属节点上的 `DataNode` 服务和 `NodeManager` 服务都会被启动。
-
-```properties
-hadoop001
-hadoop002
-hadoop003
-```
-
-10. 分发程序
-
-将 Hadoop 安装包分发到其他两台服务器，分发后建议在这两台服务器上也配置一下 Hadoop 的环境变量。
-
-```shell
-# 将安装包分发到hadoop002
-scp -r /usr/app/hadoop-2.6.0-cdh5.15.2/  hadoop002:/usr/app/
-# 将安装包分发到hadoop003
-scp -r /usr/app/hadoop-2.6.0-cdh5.15.2/  hadoop003:/usr/app/
-```
-
-11.  初始化
-
-在 `Hadoop001` 上执行 namenode 初始化命令：
-
-```
-hdfs namenode -format
-```
-
-12. 启动集群
-
-进入到 `Hadoop001` 的 `${HADOOP_HOME}/sbin` 目录下，启动 Hadoop。此时 `hadoop002` 和 `hadoop003` 上的相关服务也会被启动：
-
-```shell
-# 启动dfs服务
-start-dfs.sh
-# 启动yarn服务
-start-yarn.sh
-```
-
-13. 查看集群
-
-在每台服务器上使用 `jps` 命令查看服务进程，或直接进入 Web-UI 界面进行查看，端口为 `50070`。可以看到此时有三个可用的 `Datanode`：
-
-<div align="center"> <img  src="../pictures/hadoop-集群环境搭建.png"/> </div>
-<BR/>
-
-点击 `Live Nodes` 进入，可以看到每个 `DataNode` 的详细情况：
-
-<div align="center"> <img  src="../pictures/hadoop-集群搭建2.png"/> </div>
-<BR/>
-
-接着可以查看 Yarn 的情况，端口号为 `8088` ：
-
-<div align="center"> <img  src="../pictures/hadoop-集群搭建3.png"/> </div>
-
-
-### 提交服务到集群
-
-提交作业到集群的方式和单机环境完全一致，这里以提交 Hadoop 内置的计算 Pi 的示例程序为例，在任何一个节点上执行都可以，命令如下：
-
-```shell
-hadoop jar /usr/app/hadoop-2.6.0-cdh5.15.2/share/hadoop/mapreduce/hadoop-mapreduce-examples-2.6.0-cdh5.15.2.jar  pi  3  3
-```
 
