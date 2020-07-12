@@ -476,3 +476,331 @@ job.setNumReduceTasks(WordCountDataUtils.WORD_LIST.size());
 <div align="center"> <img  src="pictures/hadoop-wordcountcombinerpartition.png"/> </div>
 
 
+## 七、MapReduce实战
+
+### 7.1 项目需求
+
+本地处理access日志，存放于AccessInput目录下：
+
+```
+1363157985066 	13726230503	00-FD-07-A4-72-B8:CMCC	120.196.100.82	i02.c.aliimg.com		24	27	2481	24681	200
+1363157995052 	13826544101	5C-0E-8B-C7-F1-E0:CMCC	120.197.40.4			4	0	264	0	200
+1363157991076 	13926435656	20-10-7A-28-CC-0A:CMCC	120.196.100.99			2	4	132	1512	200
+1363154400022 	13926251106	5C-0E-8B-8B-B1-50:CMCC	120.197.40.4			4	0	240	0	200
+1363157993044 	18211575961	94-71-AC-CD-E6-18:CMCC-EASY	120.196.100.99	iface.qiyi.com	视频网站	15	12	1527	2106	200
+1363157995074 	84138413	5C-0E-8B-8C-E8-20:7DaysInn	120.197.40.4	122.72.52.12		20	16	4116	1432	200
+1363157993055 	13560439658	C4-17-FE-BA-DE-D9:CMCC	120.196.100.99			18	15	1116	954	200
+1363157995033 	15920133257	5C-0E-8B-C7-BA-20:CMCC	120.197.40.4	sug.so.360.cn	信息安全	20	20	3156	2936	200
+1363157983019 	13719199419	68-A1-B7-03-07-B1:CMCC-EASY	120.196.100.82			4	0	240	0	200
+1363157984041 	13660577991	5C-0E-8B-92-5C-20:CMCC-EASY	120.197.40.4	s19.cnzz.com	站点统计	24	9	6960	690	200
+1363157973098 	15013685858	5C-0E-8B-C7-F7-90:CMCC	120.197.40.4	rank.ie.sogou.com	搜索引擎	28	27	3659	3538	200
+1363157986029 	15989002119	E8-99-C4-4E-93-E0:CMCC-EASY	120.196.100.99	www.umeng.com	站点统计	3	3	1938	180	200
+1363157992093 	13560439658	C4-17-FE-BA-DE-D9:CMCC	120.196.100.99			15	9	918	4938	200
+1363157986041 	13480253104	5C-0E-8B-C7-FC-80:CMCC-EASY	120.197.40.4			3	3	180	180	200
+1363157984040 	13602846565	5C-0E-8B-8B-B6-00:CMCC	120.197.40.4	2052.flash2-http.qq.com	综合门户	15	12	1938	2910	200
+1363157995093 	13922314466	00-FD-07-A2-EC-BA:CMCC	120.196.100.82	img.qfc.cn		12	12	3008	3720	200
+1363157982040 	13502468823	5C-0A-5B-6A-0B-D4:CMCC-EASY	120.196.100.99	y0.ifengimg.com	综合门户	57	102	7335	110349	200
+1363157986072 	18320173382	84-25-DB-4F-10-1A:CMCC-EASY	120.196.100.99	input.shouji.sogou.com	搜索引擎	21	18	9531	2412	200
+1363157990043 	13925057413	00-1F-64-E1-E6-9A:CMCC	120.196.100.55	t3.baidu.com	搜索引擎	69	63	11058	48243	200
+1363157988072 	13760778710	00-FD-07-A4-7B-08:CMCC	120.196.100.82			2	2	120	120	200
+1363157985066 	13726238888	00-FD-07-A4-72-B8:CMCC	120.196.100.82	i02.c.aliimg.com		24	27	2481	24681	200
+1363157993055 	13560436666	C4-17-FE-BA-DE-D9:CMCC	120.196.100.99			18	15	1116	954	200
+1363157985066 	13726238888	00-FD-07-A4-72-B8:CMCC	120.196.100.82	i02.c.aliimg.com		24	27	10000	20000	200
+```
+
+第二个字段是电话号，倒数第三个字段是上行流量、倒数第二个下行流量。
+
+需求：统计每个手机号上行流量和、下行流量和、总的流量（上行+下行）。需要根据手机号进行分组，将该手机的上行和下行流量加起来。
+
+解决分析：
+
+1. 首先需要定义一个Access类，这个类是我们的自定义复杂类型，主要用来将需求中的所需要的项提取出来。
+
+```java
+import org.apache.hadoop.io.Writable;
+
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
+
+/**
+ * 自定义一个复杂类型
+ * 1. 按照hadoop规范，需要实现Writable接口
+ * 2. 按照Hadoop规范，需要重写write和readFields这两个方法
+ * 3. 定义一个默认的构造方法
+ */
+public class Access implements Writable{
+
+    private String phone;
+    private long up;
+    private long down;
+    private long sum;
+
+    public Access(){}
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public long getUp() {
+        return up;
+    }
+
+    public void setUp(long up) {
+        this.up = up;
+    }
+
+    public long getDown() {
+        return down;
+    }
+
+    public void setDown(long down) {
+        this.down = down;
+    }
+
+    public long getSum() {
+        return sum;
+    }
+
+    public void setSum(long sum) {
+        this.sum = sum;
+    }
+
+    @Override
+    public void write(DataOutput out) throws IOException {
+        //将需求中所需要的项写出去
+        out.writeUTF(phone);
+        out.writeLong(up);
+        out.writeLong(down);
+        out.writeLong(sum);
+
+    }
+
+    @Override
+    public void readFields(DataInput in) throws IOException {
+
+        this.phone = in.readUTF();
+        this.up = in.readLong();
+        this.down = in.readLong();
+        this.sum = in.readLong();
+    }
+
+    @Override
+    public String toString() {
+        return "Access{" +
+                "phone='" + phone + '\'' +
+                ", up=" + up +
+                ", down=" + down +
+                ", sum=" + sum +
+                '}';
+    }
+}
+
+
+```
+
+2. Mapper阶段：需要将输入的数据，安行拆分出手机号、上行流量、下行流量、求出总和，将手机号作为key，将Access作为value输出。
+
+```java
+import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Mapper;
+
+import java.io.IOException;
+
+/**
+ * 自定义Mapper类
+ */
+public class AccessMapper extends Mapper<LongWritable , Text , Text , Access> {
+
+    @Override
+    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+
+        String[] lines = value.toString().split("\t");
+        String phone = lines[1];
+        Long up = Long.parseLong(lines[lines.length-3]);
+        Long down = Long.parseLong(lines[lines.length-2]);
+
+        context.write(new Text(phone),new Access(phone,up,down));
+    }
+}
+
+
+```
+
+3. Reducer阶段：
+
+```java
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Reducer;
+
+import java.io.IOException;
+
+public class AccessReducer extends Reducer<Text,Access,Text,Access> {
+
+    @Override
+    protected void reduce(Text key, Iterable<Access> values, Context context) throws IOException, InterruptedException {
+
+        long ups = 0;
+        long downs = 0;
+
+        for (Access access : values){
+            ups += access.getUp();
+            downs += access.getDown();
+        }
+
+
+        context.write(key , new Access(key.toString(),ups,downs));
+    }
+}
+
+
+```
+
+4. Driver类
+
+```java
+
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
+
+public class AccessLocalApp {
+
+    public static void main(String[] args) throws Exception{
+
+        Configuration configuration = new Configuration();
+        configuration.set("dfs.replication","1");
+
+        Job job = Job.getInstance(configuration);
+
+        //设置主类
+        job.setJarByClass(AccessLocalApp.class);
+
+        //设置mapper和reducer主类‘
+        job.setMapperClass(AccessMapper.class);
+        job.setReducerClass(AccessReducer.class);
+
+        //设置mapper输出类型
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(Access.class);
+
+        //设置reducer输出类型
+        job.setOutputKeyClass(Text.class);
+        job.setOutputValueClass(Access.class);
+
+        //设置输入输出文件目录
+        FileInputFormat.setInputPaths(job,new Path("AccessInput"));
+        FileOutputFormat.setOutputPath(job,new Path("AccessOutput"));
+
+        //提交
+        job.waitForCompletion(true);
+    }
+
+
+}
+
+
+```
+
+5. 运行结果
+
+```
+
+13480253104	Access{phone='13480253104', up=180, down=180, sum=360}
+13502468823	Access{phone='13502468823', up=7335, down=110349, sum=117684}
+13560436666	Access{phone='13560436666', up=1116, down=954, sum=2070}
+13560439658	Access{phone='13560439658', up=2034, down=5892, sum=7926}
+13602846565	Access{phone='13602846565', up=1938, down=2910, sum=4848}
+13660577991	Access{phone='13660577991', up=6960, down=690, sum=7650}
+13719199419	Access{phone='13719199419', up=240, down=0, sum=240}
+13726230503	Access{phone='13726230503', up=2481, down=24681, sum=27162}
+13726238888	Access{phone='13726238888', up=12481, down=44681, sum=57162}
+13760778710	Access{phone='13760778710', up=120, down=120, sum=240}
+13826544101	Access{phone='13826544101', up=264, down=0, sum=264}
+13922314466	Access{phone='13922314466', up=3008, down=3720, sum=6728}
+13925057413	Access{phone='13925057413', up=11058, down=48243, sum=59301}
+13926251106	Access{phone='13926251106', up=240, down=0, sum=240}
+13926435656	Access{phone='13926435656', up=132, down=1512, sum=1644}
+15013685858	Access{phone='15013685858', up=3659, down=3538, sum=7197}
+15920133257	Access{phone='15920133257', up=3156, down=2936, sum=6092}
+15989002119	Access{phone='15989002119', up=1938, down=180, sum=2118}
+18211575961	Access{phone='18211575961', up=1527, down=2106, sum=3633}
+18320173382	Access{phone='18320173382', up=9531, down=2412, sum=11943}
+84138413	Access{phone='84138413', up=4116, down=1432, sum=5548}
+
+
+```
+
+发现上面的运行结果不好看，电话号的显示重复了，而且，有Access{}的出现。对于电话号的重复问题，我们可以使用NullWritable来作为reducer阶段输出的key。而Access{}则是在Access类中，修改重写的toString方法。
+
+```java
+
+//在Access类中，修改toString方法
+    @Override
+    public String toString() {
+        return  phone + "\t" +
+                ", " + up +
+                ", " + down +
+                ", " + sum ;
+    }
+
+//在reducer类处，修改第三个参数为NullWritable
+public class AccessReducer extends Reducer<Text,Access, NullWritable,Access>
+
+//在reducer类写出时，使用NullWritable.get()
+context.write(NullWritable.get() , new Access(key.toString(),ups,downs));
+
+//再修改driver中reducer输出类
+job.setOutputKeyClass(NullWritable.class);
+
+```
+
+6. 将统计结果进行分区
+
+定义一个自定义分区类，设置分区规则。Patitioner类接收的类型是map的输出类型。我们将以13开头的，15开头的和其他开头的结果各自存放在一个文件中。即定义了3个分区。
+
+```java
+import org.apache.hadoop.io.Text;
+import org.apache.hadoop.mapreduce.Partitioner;
+
+/**
+ * 自定义分区
+ * Partitioner需要传入map的输出类型
+ */
+public class AccessPartitioner extends Partitioner<Text, Access> {
+
+    /**
+     * @param text 手机号
+     */
+    @Override
+    public int getPartition(Text text, Access access, int numPartitions) {
+
+        if(text.toString().startsWith("13")){
+            return 0;
+        }else if(text.toString().startsWith("15")){
+            return 1;
+        }else {
+            return 2;
+        }
+    }
+}
+```
+
+在Driver类中，要加载partitioner类，并设置reduce的个数
+
+```java
+
+    //设置自定义分区规则
+    job.setPartitionerClass(AccessPartitioner.class);
+    //设置分区数，即设置reduce个数，分区逻辑分了几个，reduce就写几个
+    job.setNumReduceTasks(3);
+
+```
