@@ -1,5 +1,29 @@
 ` 目录 `
 
+- [一、MapReduce概述](#一mapreduce概述)
+- [二、MapReduce编程模型简述](#二mapreduce编程模型简述)
+- [三、combiner & partitioner](#三combiner--partitioner)
+    - [3.1 InputFormat & RecordReaders](#31-inputformat--recordreaders)
+    - [3.2 Combiner](#32-combiner)
+    - [3.3 Partitioner](#33-partitioner)
+- [四、MapReduce初识](#四mapreduce初识)
+    - [4.1 项目简介](#41-项目简介)
+    - [4.2 WordCountMapper](#42-wordcountmapper)
+    - [4.3 WordCountReducer](#43-wordcountreducer)
+    - [4.4 WordCountApp](#44-wordcountapp)
+    - [4.5 提交到服务器运行](#45-提交到服务器运行)
+    - [4.6 本地测试](#46-本地测试)
+    - [4.7 数据文本忽略大小写问题](#47-数据文本忽略大小写问题)
+- [五、词频统计案例进阶之Combiner](#五词频统计案例进阶之combiner)
+    - [5.1 代码实现](#51-代码实现)
+    - [5.2 执行结果](#52-执行结果)
+- [六、词频统计案例进阶之Partitioner](#六词频统计案例进阶之partitioner)
+    - [6.1  默认的Partitioner](#61--默认的partitioner)
+    - [6.2 自定义Partitioner](#62-自定义parttioner)
+    - [6.3  执行结果](#63--执行结果)
+- [七、MapReduce实战](#七mapreduce实战)
+    - [7.1 项目需求](#71-项目需求)  
+    - [7.2 需求实现](#72-需求实现)
 
 ## 一、MapReduce概述
 
@@ -512,7 +536,7 @@ job.setNumReduceTasks(WordCountDataUtils.WORD_LIST.size());
 
 需求：统计每个手机号上行流量和、下行流量和、总的流量（上行+下行）。需要根据手机号进行分组，将该手机的上行和下行流量加起来。
 
-解决分析：
+### 7.2 需求实现
 
 1. 首先需要定义一个Access类，这个类是我们的自定义复杂类型，主要用来将需求中的所需要的项提取出来。
 
