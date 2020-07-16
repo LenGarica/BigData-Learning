@@ -47,29 +47,57 @@
 
 优先B站上免费的学习视频。
     
-    Java、Scala部分尚硅谷韩顺平
-    
-    MySQL使用《[图灵程序设计丛书].MySQL必知必会》
+Java、Scala部分尚硅谷韩顺平
 
-    Git和Github使用《[图灵程序设计丛书].GitHub入门与实践》
+MySQL使用《MySQL必知必会》
 
-    数据结构，推荐慕课网的玩转数据结构，或者尚硅谷韩顺平的数据结构
+Git和Github使用《GitHub入门与实践》
 
-    Python推荐使用廖雪峰pdf
+数据结构，推荐慕课网的玩转数据结构，或者尚硅谷韩顺平的数据结构
 
-    Hadoop、Spark、Flink、Storm推荐慕课网PK哥视频，但是此课程理论不强，且少了很多重要知识点，推荐与尚硅谷分享的大数据视频结合看，同时强烈推荐使用尚硅谷分享的大数据课程的讲义。
+Python推荐使用廖雪峰pdf
 
-    机器学习算法推荐b站李宏毅老师的视频（或者浙大研究生机器学习理论课程），然后结合慕课网机器学习实战，或者使用黑马的机器学习课程
+Hadoop、Spark、Flink、Storm推荐慕课网PK哥视频，但是此课程理论不强，且少了很多重要知识点，推荐与尚硅谷分享的大数据视频结合看，同时强烈推荐使用尚硅谷分享的大数据课程的讲义。
 
-    推荐系统、用户画像、知识图谱，目前没有什么好的视频，建议看书。《推荐系统实践》、《用户画像：方法论与工程化解决方案（从技术、产品、运营3个维度详尽阐述从0到1搭建用户画像系统的技术栈和方法论）》
+机器学习算法推荐b站李宏毅老师的视频（或者浙大研究生机器学习理论课程），然后结合慕课网机器学习实战，或者使用黑马的机器学习课程
+
+推荐系统、用户画像、知识图谱，目前没有什么好的视频，建议看书。《推荐系统实践》、《用户画像：方法论与工程化解决方案（从技术、产品、运营3个维度详尽阐述从0到1搭建用户画像系统的技术栈和方法论）》
 
 ### 安装篇
 
+[Hadoop安装](https://github.com/Zhang-Yixuan/BigData-Learning/blob/master/Installation/Hadoop%E5%AE%89%E8%A3%85%E7%AF%87.md)
+
+[Spark安装]()
+
+[Flink安装]()
+
+[Storm安装]()
+
 ### 基础部分
+
+[MySQL篇](https://github.com/Zhang-Yixuan/BigData-Learning/tree/master/DataBase/MySQL)
+
+[Redis篇](https://github.com/Zhang-Yixuan/BigData-Learning/tree/master/DataBase/Redis)
+
+[HBase篇](https://github.com/Zhang-Yixuan/BigData-Learning/tree/master/DataBase/HBase)
 
 ### 框架部分
 
+[Hadoop篇](https://github.com/Zhang-Yixuan/BigData-Learning/tree/master/Hadoop)
+
 ### 中级部分
+
+[HDFS项目](https://github.com/Zhang-Yixuan/BigData-Learning/tree/master/Hadoop/codes/HDFS)
+
+[MapReduce项目](https://github.com/Zhang-Yixuan/BigData-Learning/tree/master/Hadoop/codes/MapReduce)
+
+[电商日志处理项目实战](https://github.com/Zhang-Yixuan/BigData-Learning/tree/master/Hadoop/codes/%E7%94%B5%E5%95%86%E9%A1%B9%E7%9B%AE)
+
+[Spark项目]()
+
+[Flink项目]()
+
+[Storm项目]()
 
 ### 终极部分
 

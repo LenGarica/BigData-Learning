@@ -39,3 +39,7 @@ export PATH=$KAFKA_HOME/bin:$PATH
 # flume environment
 export FLUME_HOME=/home/willhope/app/apache-flume-1.6.0-cdh5.15.1-bin
 export PATH=$FLUME_HOME/bin:$PATH
+
+
+# maven environment
+export PATH=/home/willhope/app/apache-maven-3.5.4/bin:$PATH

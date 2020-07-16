@@ -1,5 +1,122 @@
 ` 目录 `
 
+- [第一部分——HDFS](#第一部分hdfs)
+    - [一、介绍](#一介绍)
+    - [二、HDFS 设计原理](#二hdfs-设计原理)
+        - [2.1 HDFS 设计目标](#21-hdfs-设计目标)
+        - [2.2 HDFS 架构（非常重要，面试重点）](#22-hdfs-架构非常重要面试重点)
+        - [2.3 详解文件系统命名空间](#23-详解文件系统命名空间)
+        - [2.5 数据复制](#25-数据复制)
+        - [2.6 数据复制的实现原理](#26-数据复制的实现原理)
+        - [2.7  副本的选择](#27--副本的选择)
+        - [2.8 架构的稳定性](#28-架构的稳定性)
+            - [1. 心跳机制和重新复制](#1-心跳机制和重新复制)
+            - [2. 数据的完整性](#2-数据的完整性)
+            - [3.元数据的磁盘故障](#3元数据的磁盘故障)
+            - [4.支持快照](#4支持快照)
+    - [三、图解HDFS存储原理](#三图解hdfs存储原理)
+        - [3.1 HDFS写数据原理](#31-hdfs写数据原理)
+        - [3.2 HDFS读数据原理](#32-hdfs读数据原理)
+        - [3.3 HDFS故障类型和其检测方法](#33-hdfs故障类型和其检测方法)
+        - [3.4 读写故障的处理](#34-读写故障的处理)
+        - [3.5 DataNode 故障处理](#35-datanode-故障处理)
+        - [3.6 副本布局策略](#36-副本布局策略)
+    - [四、HDFS的操作](#四hdfs的操作)
+    - [五、HDFS API的初识](#五hdfs-api的初识)
+    - [六、HDFS实战](#六hdfs实战)
+- [第二部分——MapReduce](#第二部分mapreduce)
+    - [一、MapReduce概述](#一mapreduce概述)
+    - [二、MapReduce编程模型简述](#二mapreduce编程模型简述)
+    - [三、combiner & partitioner](#三combiner--partitioner)
+        - [3.1 InputFormat & RecordReaders](#31-inputformat--recordreaders)
+        - [3.2 Combiner](#32-combiner)
+        - [3.3 Partitioner](#33-partitioner)
+    - [四、MapReduce初识](#四mapreduce初识)
+        - [4.1 项目简介](#41-项目简介)
+        - [4.2 WordCountMapper](#42-wordcountmapper)
+        - [4.3 WordCountReducer](#43-wordcountreducer)
+        - [4.4 WordCountApp](#44-wordcountapp)
+        - [4.5 提交到服务器运行](#45-提交到服务器运行)
+        - [4.6 本地测试](#46-本地测试)
+        - [4.7 数据文本忽略大小写问题](#47-数据文本忽略大小写问题)
+    - [五、词频统计案例进阶之Combiner](#五词频统计案例进阶之combiner)
+        - [5.1 代码实现](#51-代码实现)
+        - [5.2 执行结果](#52-执行结果)
+    - [六、词频统计案例进阶之Partitioner](#六词频统计案例进阶之partitioner)
+        - [6.1  默认的Partitioner](#61--默认的partitioner)
+        - [6.2 自定义Partitioner](#62-自定义partitioner)
+        - [6.3  执行结果](#63--执行结果)
+    - [七、MapReduce实战](#七mapreduce实战)
+        - [7.1 项目需求](#71-项目需求)
+        - [7.2 需求实现](#72-需求实现)
+- [第三部分——Yarn](#第三部分yarn)
+    - [一、hadoop yarn 简介](#一hadoop-yarn-简介)
+    - [二、YARN架构](#二yarn架构)
+        - [2.1 ResourceManager](#21-resourcemanager)
+        - [2.2 NodeManager](#22-nodemanager)
+        - [2.3 ApplicationMaster](#23-applicationmaster)
+        - [2.4 Contain](#24-contain)
+    - [三、YARN工作原理简述](#三yarn工作原理简述)
+    - [四、YARN工作原理详述](#四yarn工作原理详述)
+        - [4.1 作业提交](#41-作业提交)
+        - [4.2 作业初始化](#42-作业初始化)
+        - [4.3 任务分配](#43-任务分配)
+        - [4.4 任务运行](#44-任务运行)
+        - [4.5 进度和状态更新](#45-进度和状态更新)
+        - [4.6 作业完成](#46-作业完成)
+    - [五、提交作业到YARN上运行](#五提交作业到yarn上运行)
+- [第四部分——电商日志分析项目](#第四部分电商日志分析项目)
+    - [一、什么是用户行为日志？](#一什么是用户行为日志)
+    - [二、项目需求](#二项目需求)
+    - [三、需求实现版本一](#三需求实现版本一)
+        - [3.1 页面的浏览量的统计](#31-页面的浏览量的统计)
+        - [3.2 各个省份浏览量的统计](#32-各个省份浏览量的统计)
+        - [3.3 统计页面的访问量](#33-统计页面的访问量)
+    - [四、需求实现版本二](#四需求实现版本二)
+        - [4.1 ETL处理](#41-etl处理)
+        - [4.2 页面的浏览量的统计V2](#42-页面的浏览量的统计v2)
+        - [4.3 各个省份浏览量的统计V2](#43-各个省份浏览量的统计v2)
+        - [4.4 统计页面的访问量V2](#44-统计页面的访问量v2)
+        - [4.5 提交到服务器端运行](#45-提交到服务器端运行)
+- [第五部分——Hive](#第五部分hive)
+    - [一、Hive产生的背景](#一hive产生的背景)
+    - [二、Hive体系架构](#二hive体系架构)
+    - [三、Hive部署架构](#三hive部署架构)
+    - [四、Hive和关系型数据库的区别](#四hive和关系型数据库的区别)
+    - [五、Hive部署操作](#五hive部署操作)
+    - [六、Hive配置遇到的坑](#六hive配置遇到的坑)
+    - [七、Hive的常用操作](#七hive的常用操作)
+    - [八、电商日志分析项目Hive版](#八电商日志分析项目hive版)
+- [第六部分——Sqoop](#第六部分sqoop)
+    - [一、Sqoop 基本命令](#一sqoop-基本命令)
+        - [1.1 查看所有命令](#11-查看所有命令)
+        - [1.2 查看某条命令的具体使用方法](#12-查看某条命令的具体使用方法)
+    - [二、Sqoop 与 MySQL](#二sqoop-与-mysql)
+        - [2.1 查询MySQL所有数据库](#21-查询mysql所有数据库)
+        - [2. 查询指定数据库中所有数据表](#2-查询指定数据库中所有数据表)
+    - [三、Sqoop 与 HDFS](#三sqoop-与-hdfs)
+        - [3.1 MySQL数据导入到HDFS](#31-mysql数据导入到hdfs)
+            - [1. 导入命令](#1-导入命令)
+            - [2. 导入验证](#2-导入验证)
+        - [3.2 HDFS数据导出到MySQL](#32-hdfs数据导出到mysql)
+    - [四、Sqoop 与 Hive](#四sqoop-与-hive)
+        - [4.1 MySQL数据导入到Hive](#41-mysql数据导入到hive)
+            - [1. 导入命令](#1-导入命令-1)
+            - [2. 导入验证](#2-导入验证-1)
+            - [3. 可能出现的问题](#3-可能出现的问题)
+        - [4.2 Hive 导出数据到MySQL](#42-hive-导出数据到mysql)
+            - [1. 查看Hive表在HDFS的存储位置](#1-查看hive表在hdfs的存储位置)
+            - [3.2 执行导出命令](#32-执行导出命令)
+    - [五、Sqoop 与 HBase](#五sqoop-与-hbase)
+        - [5.1 MySQL导入数据到HBase](#51-mysql导入数据到hbase)
+            - [1. 导入数据](#1-导入数据)
+            - [2. 导入验证](#2-导入验证-2)
+    - [六、全库导出](#六全库导出)
+    - [七、Sqoop 数据过滤](#七sqoop-数据过滤)
+        - [7.1 query参数](#71-query参数)
+        - [7.2 增量导入](#72-增量导入)
+    - [八、类型支持](#八类型支持)
+
 # 第一部分——HDFS
 
 ## 一、介绍
@@ -2663,37 +2780,53 @@ Hive数据抽象/结构
 				data  文件 
 				bucket  分桶   HDFS一个文件
 
+```
 
+```
 CREATE (DATABASE|SCHEMA) [IF NOT EXISTS] database_name
   [COMMENT database_comment]
   [LOCATION hdfs_path]
   [WITH DBPROPERTIES (property_name=property_value, ...)];
+```
 
 /user/hive/warehouse是Hive默认的存储在HDFS上的路径
 
-(创建一个数据库hive，默认的存储地址为hdfs上的user/hive/warehouse/hive.db，可以在mysql中通过select * from DBS \G查看)
+1. (创建一个数据库hive，默认的存储地址为hdfs上的user/hive/warehouse/hive.db，可以在mysql中通过select * from DBS \G查看)
+
 Create database hive；
 
-(添加一个判断是否存在的语句，如果不存在则创建，如果存在则忽略)
+2. (添加一个判断是否存在的语句，如果不存在则创建，如果存在则忽略)
+
 CREATE DATABASE IF NOT EXISTS hive;
 
-(更改已经创建的数据库在HDFS所存储的位置)
+3. (更改已经创建的数据库在HDFS所存储的位置)
+
 CREATE DATABASE IF NOT EXISTS hive2 LOCATION '/test/location';
 
-(为创建的数据库添加创建者的名字，可以在hive中使用desc database extended hive3查看到相关的信息)
+4. (为创建的数据库添加创建者的名字，可以在hive中使用desc database extended hive3查看到相关的信息)
+
 CREATE DATABASE IF NOT EXISTS hive3 WITH DBPROPERTIES('creator'='root');
 
-(将hive的数据库在控制台设置成显式，方便开发人员使用)
+5. (将hive的数据库在控制台设置成显式，方便开发人员使用)
+
 set hive.cli.print.current.db = true ;
 
 在hive中使用!clear可以清理控制台。
 
 use 数据库名称；表示选择了某个数据库进行操作
+
 show tables；显示当前的数据库中的表
+
 drop database 数据库名称；表示删除某个数据库
+
+truncate table 表名;仅删除表中数据，保留表结构
+
+drop table if exists 表名;删除表以及数据
+
 如某个数据库中有多个表，执行drop database则会报错，可使用drop database test_db cascade;进行级联操作删除，但如果是在删除的数据库当前路径下，执行其他操作，会报当前数据库已经不存，因此要使用use进行其他数据库的选择，也可以直接使用use default，当默认的数据库下面进行操作。
 
 执行下面的语句，创建一个表
+```
 CREATE TABLE emp(
 empno int,
 ename string,
@@ -2705,39 +2838,49 @@ comm double,
 deptno int
 ) ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t';
 此时使用show tables；不会有任何数据。
+```
 
-(将数据添加到表中，emp.txt这个文件在任何一个关系型数据库都能找到)
+6. (将数据添加到表中，emp.txt这个文件在任何一个关系型数据库都能找到)
 LOAD DATA LOCAL INPATH '/home/willhope/data/emp.txt' OVERWRITE INTO TABLE emp;
 
-(查看表的结构)
+7. (查看表的结构)
 desc 表的名称；   只显示表的结构
+
 desc extend 表的名称；  不仅显示表的结构，还显示表的中各项信息，以及此表存放在hdfs上的那个文件夹，但是显示的很乱
+
 desc formatted 表的名称； 这样就会使表中的各个信息格式化的显示
 
-(更改表的名字)
+8. (更改表的名字)
+
 alter table emp rename to emp2；  前者是old名称，后者是new名称
 
+9. (加载数据到hive上)
+
 LOAD DATA [LOCAL] INPATH 'filepath' [OVERWRITE] INTO TABLE tablename [PARTITION (partcol1=val1, partcol2=val2 ...)]
+
 LOCAL：本地系统，如果没有local那么就是指的HDFS的路径
+
 OVERWRITE：是否数据覆盖（即先删除，再加进去），如果没有那么就是数据追加
 
-(本地的数据要加上local关键字)
+10. (本地的数据要加上local关键字)
 LOAD DATA LOCAL INPATH '/home/hadoop/data/emp.txt' OVERWRITE INTO TABLE emp;
 
 (HDFS上的文件，则把local去掉)
 LOAD DATA INPATH 'hdfs://hadoop000:8020/data/emp.txt' INTO TABLE emp;
 
-(将查询的数据添加到一个临时表中)
+11. (将查询的数据添加到一个临时表中)
 create table emp1 as select * from emp; 
 
-(将查询结果写入到本地目录)
+12. (将查询结果写入到本地目录)
 INSERT OVERWRITE LOCAL DIRECTORY '/tmp/hive/'
 ROW FORMAT DELIMITED FIELDS TERMINATED BY '\t'
 select empno,ename,sal,deptno from emp;
 
-(过滤条件、聚合与关系型数据库的相同)
+13. (过滤条件、聚合与关系型数据库的相同)
 聚合： max/min/sum/avg
+
 分组函数： group by
+```
 	求每个部门的平均工资
 	出现在select中的字段，如果没有出现在聚合函数里，那么一定要实现在group by里
 	select deptno, avg(sal) from emp group by deptno;
@@ -2747,13 +2890,13 @@ select empno,ename,sal,deptno from emp;
 	select deptno, avg(sal) avg_sal from emp group by deptno where avg_sal>2000;
     对于分组函数过滤要使用having而不是使用where
     select deptno, avg(sal) avg_sal from emp group by deptno having avg_sal>2000;	
+```
 
-join ： 多表
+14. 使用join多表查询
 
-emp
-dept
+先创建dept表，并加载数据到此表中
 
-
+```
 CREATE TABLE dept(
 deptno int,
 dname string,
@@ -2762,13 +2905,465 @@ loc string
 
 LOAD DATA LOCAL INPATH '/home/hadoop/data/dept.txt' OVERWRITE INTO TABLE dept;
 
+```
+
+多表查询
+
+```
 (执行计划)
 explain EXTENDED
 select 
 e.empno,e.ename,e.sal,e.deptno,d.dname
 from emp e join dept d
 on e.deptno=d.deptno;
+```
+
+
+## 八、电商日志分析项目Hive版
+
+Hive版 针对ETL后的数据进行处理。
+
+1. 首先，创建一张表，用来存放ETL后的数据内容。
+
+```sql
+create external table trackinfo(
+   ip string,
+   country string,
+   province string,
+   city string,
+   url string,
+   time string,
+   page string
+)partitioned by (day string)
+row format delimited fields terminated by '\t'
+location '/project/trackinfo/';
+```
+
+2. 在hdfs上创建一个目录存放ETL数据，并且上传数据。也可以上传原始数据，然后使用mvn编译的jar的ETL类将原始数据进行处理。
+
+```sql
+hadoop fs -mkdir -p /project/input/
+
+hadoop fs -put /home/willhope/Documents/dev/BigData-Learning/Hadoop/codes/电商项目/ProjectInput/part-r-00000 /project/input
+
+# 查看文件大小
+hadoop fs -du -s -h /project/input/part-r-00000
 
 ```
 
-## 八、
+3. 加载数据
+
+```sql
+
+#加载数据后，原先目录中的数据就没有了，若后面要使用，需要重新上传
+load data inpath 'hdfs://willhope-pc:8020/project/input/part-r-00000' overwrite into table trackinfo partition(day='2013-07-21');
+
+```
+
+4. 查询表中数据
+
+```sql
+
+select * from trackinfo where day='2013-07-21' limit 5;
+
+```
+
+5. 统计有多少数据，即统计页面浏览量
+
+
+```sql
+
+select count(*) from trackinfo where day='2013-07-21';
+
+```
+
+6. 统计各个省份的浏览量
+
+```sql
+
+select province,count(*) from trackinfo where day='2013-07-21' group by province;
+
+```
+
+7. 创建目标表，将查询的结果存放在表中。例如统计各个省份的浏览量
+
+```sql
+
+# 创建目标表
+create table trackinfo_provincestat(
+    province string,
+    cnt bigint    
+)partitioned by(day string)
+row format delimited fields terminated by '\t';
+
+
+# 插入查询后的数据
+insert overwrite table trackinfo_provincestat partition(day='2013-07-21')
+select province,count(*) as cnt from trackinfo where day='2013-07-21' group by province;
+
+```
+
+# 第六部分——Sqoop
+
+## 一、Sqoop 基本命令
+
+### 1.1 查看所有命令
+
+```shell
+# sqoop help
+```
+
+<div align="center"> <img  src="pictures/sqoop-help.png"/> </div>
+
+<br/>
+
+### 1.2 查看某条命令的具体使用方法
+
+```shell
+# sqoop help 命令名
+```
+
+
+## 二、Sqoop 与 MySQL
+
+### 2.1 查询MySQL所有数据库
+
+通常用于 Sqoop 与 MySQL 连通测试：
+
+```shell
+sqoop list-databases \
+--connect jdbc:mysql://hadoop001:3306/ \
+--username root \
+--password 123456
+```
+
+<div align="center"> <img  src="pictures/sqoop-list-databases.png"/> </div>
+
+<br/>
+
+### 2. 查询指定数据库中所有数据表
+
+```shell
+sqoop list-tables \
+--connect jdbc:mysql://hadoop001:3306/mysql \
+--username root \
+--password 123456
+```
+
+
+
+## 三、Sqoop 与 HDFS
+
+### 3.1 MySQL数据导入到HDFS
+
+#### 1. 导入命令
+
+示例：导出 MySQL 数据库中的 `help_keyword` 表到 HDFS 的 `/sqoop` 目录下，如果导入目录存在则先删除再导入，使用 3 个 `map tasks` 并行导入。
+
+> 注：help_keyword 是 MySQL 内置的一张字典表，之后的示例均使用这张表。
+
+```shell
+sqoop import \
+--connect jdbc:mysql://hadoop001:3306/mysql \     
+--username root \
+--password 123456 \
+--table help_keyword \           # 待导入的表
+--delete-target-dir \            # 目标目录存在则先删除
+--target-dir /sqoop \            # 导入的目标目录
+--fields-terminated-by '\t'  \   # 指定导出数据的分隔符
+-m 3                             # 指定并行执行的 map tasks 数量
+```
+
+日志输出如下，可以看到输入数据被平均 `split` 为三份，分别由三个 `map task` 进行处理。数据默认以表的主键列作为拆分依据，如果你的表没有主键，有以下两种方案：
+
++ 添加 `-- 
+reset-to-one-mapper` 参数，代表只启动一个 `map task`，即不并行执行；
++ 若仍希望并行执行，则可以使用 `--split-by <column-name>` 指明拆分数据的参考列。
+
+<div align="center"> <img  src="pictures/sqoop-map-task.png"/> </div>
+
+#### 2. 导入验证
+
+```shell
+# 查看导入后的目录
+hadoop fs -ls  -R /sqoop
+# 查看导入内容
+hadoop fs -text  /sqoop/part-m-00000
+```
+
+查看 HDFS 导入目录,可以看到表中数据被分为 3 部分进行存储，这是由指定的并行度决定的。
+
+<div align="center"> <img  src="pictures/sqoop_hdfs_ls.png"/> </div>
+
+<br/>
+
+### 3.2 HDFS数据导出到MySQL
+
+```shell
+sqoop export  \
+    --connect jdbc:mysql://hadoop001:3306/mysql \
+    --username root \
+    --password 123456 \
+    --table help_keyword_from_hdfs \        # 导出数据存储在 MySQL 的 help_keyword_from_hdf 的表中
+    --export-dir /sqoop  \
+    --input-fields-terminated-by '\t'\
+    --m 3 
+```
+
+表必须预先创建，建表语句如下：
+
+```sql
+CREATE TABLE help_keyword_from_hdfs LIKE help_keyword ;
+```
+
+
+
+## 四、Sqoop 与 Hive
+
+### 4.1 MySQL数据导入到Hive
+
+Sqoop 导入数据到 Hive 是通过先将数据导入到 HDFS 上的临时目录，然后再将数据从 HDFS 上 `Load` 到 Hive 中，最后将临时目录删除。可以使用 `target-dir` 来指定临时目录。
+
+#### 1. 导入命令
+
+```shell
+sqoop import \
+  --connect jdbc:mysql://hadoop001:3306/mysql \
+  --username root \
+  --password 123456 \
+  --table help_keyword \        # 待导入的表     
+  --delete-target-dir \         # 如果临时目录存在删除
+  --target-dir /sqoop_hive  \   # 临时目录位置
+  --hive-database sqoop_test \  # 导入到 Hive 的 sqoop_test 数据库，数据库需要预先创建。不指定则默认为 default 库
+  --hive-import \               # 导入到 Hive
+  --hive-overwrite \            # 如果 Hive 表中有数据则覆盖，这会清除表中原有的数据，然后再写入
+  -m 3                          # 并行度
+```
+
+导入到 Hive 中的 `sqoop_test` 数据库需要预先创建，不指定则默认使用 Hive 中的 `default` 库。
+
+```shell
+ # 查看 hive 中的所有数据库
+ hive>  SHOW DATABASES;
+ # 创建 sqoop_test 数据库
+ hive>  CREATE DATABASE sqoop_test;
+```
+
+#### 2. 导入验证
+
+```shell
+# 查看 sqoop_test 数据库的所有表
+ hive>  SHOW  TABLES  IN  sqoop_test;
+# 查看表中数据
+ hive> SELECT * FROM sqoop_test.help_keyword;
+```
+
+<div align="center"> <img  src="pictures/sqoop_hive_tables.png"/> </div>
+
+#### 3. 可能出现的问题
+
+<div align="center"> <img  src="pictures/sqoop_hive_error.png"/> </div>
+
+<br/>
+
+如果执行报错 `java.io.IOException: java.lang.ClassNotFoundException: org.apache.hadoop.hive.conf.HiveConf`，则需将 Hive 安装目录下 `lib` 下的 `hive-exec-**.jar` 放到 sqoop 的 `lib` 。
+
+```shell
+[root@hadoop001 lib]# ll hive-exec-*
+-rw-r--r--. 1 1106 4001 19632031 11 月 13 21:45 hive-exec-1.1.0-cdh5.15.2.jar
+[root@hadoop001 lib]# cp hive-exec-1.1.0-cdh5.15.2.jar  ${SQOOP_HOME}/lib
+```
+
+<br/>
+
+### 4.2 Hive 导出数据到MySQL
+
+由于 Hive 的数据是存储在 HDFS 上的，所以 Hive 导入数据到 MySQL，实际上就是 HDFS 导入数据到 MySQL。
+
+#### 1. 查看Hive表在HDFS的存储位置
+
+```shell
+# 进入对应的数据库
+hive> use sqoop_test;
+# 查看表信息
+hive> desc formatted help_keyword;
+```
+
+`Location` 属性为其存储位置：
+
+<div align="center"> <img  src="pictures/sqoop-hive-location.png"/> </div>
+
+这里可以查看一下这个目录，文件结构如下：
+
+<div align="center"> <img  src="pictures/sqoop-hive-hdfs.png"/> </div>
+
+#### 3.2 执行导出命令
+
+```shell
+sqoop export  \
+    --connect jdbc:mysql://hadoop001:3306/mysql \
+    --username root \
+    --password 123456 \
+    --table help_keyword_from_hive \
+    --export-dir /user/hive/warehouse/sqoop_test.db/help_keyword  \
+    -input-fields-terminated-by '\001' \             # 需要注意的是 hive 中默认的分隔符为 \001
+    --m 3 
+```
+MySQL 中的表需要预先创建：
+
+```sql
+CREATE TABLE help_keyword_from_hive LIKE help_keyword ;
+```
+
+
+
+## 五、Sqoop 与 HBase
+
+> 本小节只讲解从 RDBMS 导入数据到 HBase，因为暂时没有命令能够从 HBase 直接导出数据到 RDBMS。
+
+### 5.1 MySQL导入数据到HBase
+
+#### 1. 导入数据
+
+将 `help_keyword` 表中数据导入到 HBase 上的 `help_keyword_hbase` 表中，使用原表的主键 `help_keyword_id` 作为 `RowKey`，原表的所有列都会在 `keywordInfo` 列族下，目前只支持全部导入到一个列族下，不支持分别指定列族。
+
+```shell
+sqoop import \
+    --connect jdbc:mysql://willhope-pc:3306/mysql \
+    --username root \
+    --password 123456 \
+    --table help_keyword \              # 待导入的表
+    --hbase-table help_keyword_hbase \  # hbase 表名称，表需要预先创建
+    --column-family keywordInfo \       # 所有列导入到 keywordInfo 列族下 
+    --hbase-row-key help_keyword_id     # 使用原表的 help_keyword_id 作为 RowKey
+```
+
+导入的 HBase 表需要预先创建：
+
+```shell
+# 查看所有表
+hbase> list
+# 创建表
+hbase> create 'help_keyword_hbase', 'keywordInfo'
+# 查看表信息
+hbase> desc 'help_keyword_hbase'
+```
+
+#### 2. 导入验证
+
+使用 `scan` 查看表数据：
+
+<div align="center"> <img  src="pictures/sqoop_hbase.png"/> </div>
+
+
+
+
+
+## 六、全库导出
+
+Sqoop 支持通过 `import-all-tables` 命令进行全库导出到 HDFS/Hive，但需要注意有以下两个限制：
+
++ 所有表必须有主键；或者使用 `--
+reset-to-one-mapper`，代表只启动一个 `map task`;
++ 你不能使用非默认的分割列，也不能通过 WHERE 子句添加任何限制。
+
+> 第二点解释得比较拗口，这里列出官方原本的说明：
+>
+> + You must not intend to use non-default splitting column, nor impose any conditions via a `WHERE` clause.
+
+全库导出到 HDFS：
+
+```shell
+sqoop import-all-tables \
+    --connect jdbc:mysql://willhope-pc:3306/数据库名 \
+    --username root \
+    --password 123456 \
+    --warehouse-dir  /sqoop_all \     # 每个表会单独导出到一个目录，需要用此参数指明所有目录的父目录
+    --fields-terminated-by '\t'  \
+    -m 3
+```
+
+全库导出到 Hive：
+
+```shell
+sqoop import-all-tables -Dorg.apache.sqoop.splitter.allow_text_splitter=true \
+  --connect jdbc:mysql://willhope-pc:3306/数据库名 \
+  --username root \
+  --password root \
+  --hive-database sqoop_test \         # 导出到 Hive 对应的库   
+  --hive-import \
+  --hive-overwrite \
+  -m 3
+```
+
+
+
+## 七、Sqoop 数据过滤
+
+### 7.1 query参数
+
+Sqoop 支持使用 `query` 参数定义查询 SQL，从而可以导出任何想要的结果集。使用示例如下：
+
+```shell
+sqoop import \
+  --connect jdbc:mysql://willhope-pc:3306/mysql \
+  --username root \
+  --password 123456 \
+  --query 'select * from help_keyword where  $CONDITIONS and  help_keyword_id < 50' \  
+  --delete-target-dir \            
+  --target-dir /sqoop_hive  \ 
+  --hive-database sqoop_test \           # 指定导入目标数据库 不指定则默认使用 Hive 中的 default 库
+  --hive-table filter_help_keyword \     # 指定导入目标表
+  --split-by help_keyword_id \           # 指定用于 split 的列      
+  --hive-import \                        # 导入到 Hive
+  --hive-overwrite \                     、
+  -m 3                                  
+```
+
+在使用 `query` 进行数据过滤时，需要注意以下三点：
+
++ 必须用 `--hive-table` 指明目标表；
++ 如果并行度 `-m` 不为 1 或者没有指定 `--
+reset-to-one-mapper`，则需要用 ` --split-by ` 指明参考列；
++ SQL 的 `where` 字句必须包含 `$CONDITIONS`，这是固定写法，作用是动态替换。
+
+  
+
+### 7.2 增量导入
+
+```shell
+sqoop import \
+    --connect jdbc:mysql://willhope-pc:3306/mysql \
+    --username root \
+    --password 123456 \
+    --table help_keyword \
+    --target-dir /sqoop_hive  \
+    --hive-database sqoop_test \         
+    --incremental  append  \             # 指明模式
+    --check-column  help_keyword_id \    # 指明用于增量导入的参考列
+    --last-value 300  \                  # 指定参考列上次导入的最大值
+    --hive-import \   
+    -m 3  
+```
+
+`incremental` 参数有以下两个可选的选项：
+
++ **append**：要求参考列的值必须是递增的，所有大于 `last-value` 的值都会被导入；
++ **lastmodified**：要求参考列的值必须是 `timestamp` 类型，且插入数据时候要在参考列插入当前时间戳，更新数据时也要更新参考列的时间戳，所有时间晚于 ``last-value`` 的数据都会被导入。
+
+通过上面的解释我们可以看出来，其实 Sqoop 的增量导入并没有太多神器的地方，就是依靠维护的参考列来判断哪些是增量数据。当然我们也可以使用上面介绍的 `query` 参数来进行手动的增量导出，这样反而更加灵活。
+
+
+
+## 八、类型支持
+
+Sqoop 默认支持数据库的大多数字段类型，但是某些特殊类型是不支持的。遇到不支持的类型，程序会抛出异常 `Hive does not support the SQL type for column xxx` 异常，此时可以通过下面两个参数进行强制类型转换：
+
++ **--map-column-java\<mapping>**   ：重写 SQL 到 Java 类型的映射；
++  **--map-column-hive \<mapping>** ： 重写 Hive 到 Java 类型的映射。
+
+示例如下，将原先 `id` 字段强制转为 String 类型，`value` 字段强制转为 Integer 类型：
+
+```
+$ sqoop import ... --map-column-java id=String,value=Integer
+```
