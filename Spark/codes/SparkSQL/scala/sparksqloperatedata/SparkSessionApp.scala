@@ -1,4 +1,4 @@
-package org.example.sparksqlpreliminary
+package org.example.sparksqloperatedata
 
 import org.apache.spark.sql.SparkSession
 
