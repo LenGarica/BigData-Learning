@@ -1,33 +1,82 @@
 ` 目录：`
 
-- [Spark及生态圈概述](#spark及生态圈概述)
+- [第一部分——Spark及生态圈概述](#第一部分spark及生态圈概述)
     - [一、产生的背景](#一产生的背景)
     - [二、Spark发展历史](#二spark发展历史)
     - [三、Spark基本组件](#三spark基本组件)
     - [四、Spark和Hadoop的对比](#四spark和hadoop的对比)
-- [Spark准备](#spark准备)
-    - [一、Spark源码的编译](#一spark源码的编译)
-    - [二、Spark环境的搭建](#二spark环境的搭建)
-    - [三、Hive表的创建](#三hive表的创建)
-    - [四、使用Spark完成wordcount统计](#四使用spark完成wordcount统计)
-- [Spark SQL](#spark-sql)
+    - [五、集群架构](#五集群架构)
+- [第二部分——Spark SQL](#第二部分spark-sql)
     - [一、Spark SQL的产生](#一spark-sql的产生)
-    - [二、SQL on Hadoop](#二sql-on-hadoop)
-    - [三、Spark SQL愿景](#三spark-sql愿景)
-    - [四、Spark操作hive的多种方法](#四spark操作hive的多种方法)
+    - [二、Spark SQL愿景与特点](#二spark-sql愿景与特点)
+        - [2.1 愿景](#21-愿景)
+        - [2.2 特点](#22-特点)
+    - [三、Spark SQL操作数据](#三spark-sql操作数据)
+        - [3.1 SQLContext的用法](#31-sqlcontext的用法)
+        - [3.2 HiveContext的使用](#32-hivecontext的使用)
+        - [3.3 SparkSession的使用](#33-sparksession的使用)
+        - [3.4 Spark-shell的使用](#34-spark-shell的使用)
+        - [3.5 Spark-sql的使用](#35-spark-sql的使用)
+        - [3.6 thriftserver/beeline的使用](#36-thriftserverbeeline的使用)
+        - [3.7 jdbc编程访问](#37-jdbc编程访问)
+    - [四、RDD介绍](#四rdd介绍)
+        - [4.1 Spark RDD 定义与特点](#41-spark-rdd-定义与特点)
+        - [4.2 创建RDD](#42-创建rdd)
+            - [1. 由现有集合创建](#1-由现有集合创建)
+            - [2. 引用外部存储系统中的数据集](#2-引用外部存储系统中的数据集)
+        - [4.3 textFile & wholeTextFiles](#43-textfile--wholetextfiles)
+        - [4.4 操作RDD](#44-操作rdd)
+        - [4.5 缓存RDD](#45-缓存rdd)
+            - [1. 缓存级别](#1-缓存级别)
+            - [2. 使用缓存](#2-使用缓存)
+            - [3. 移除缓存](#3-移除缓存)
+        - [4.6 理解shuffle](#46-理解shuffle)
+            - [1. shuffle介绍](#1-shuffle介绍)
+            - [2. Shuffle的影响](#2-shuffle的影响)
+            - [3. 导致Shuffle的操作](#3-导致shuffle的操作)
+        - [4.7 宽依赖和窄依赖](#47-宽依赖和窄依赖)
+        - [4.8 DAG的生成](#48-dag的生成)
     - [五、DataFrame & Dataset](#五dataframe--dataset)
-    - [六、DataFrame和DataSet的实战](#六dataframe和dataset的实战)
-    - [七、External data source](#七external-data-source)
-- [实战——使用Spark离线处理慕课网日志](#实战使用spark离线处理慕课网日志)
+        - [5.1 Spark Dataframe](#51-spark-dataframe)
+        - [5.2. Spark Dataset](#52-spark-dataset)
+        - [5.3 RDD、DataFrame和DataSet的比较](#53-rdddataframe和dataset的比较)
+            - [1. 起始版本](#1-起始版本)
+            - [2. 数据表示形式](#2-数据表示形式)
+            - [3. 数据格式](#3-数据格式)
+            - [4. 编译时类型安全](#4-编译时类型安全)
+            - [5. 序列化](#5-序列化)
+            - [6. 垃圾回收](#6-垃圾回收)
+            - [7. 效率/内存使用](#7-效率内存使用)
+            - [8. 编程语言支持](#8-编程语言支持)
+            - [9. 聚合操作(Aggregation)](#9-聚合操作aggregation)
+        - [5.4 结论](#54-结论)
+    - [六、DataFrame API操作初识](#六dataframe-api操作初识)
+        - [6.1 DataFrame的基本操作](#61-dataframe的基本操作)
+        - [6.2 DataFrame与RDD之间的相互操作](#62-dataframe与rdd之间的相互操作)
+            - [1. 操作方式一——反射](#1-操作方式一反射)
+            - [2. 操作方式二——编程方式](#2-操作方式二编程方式)
+            - [3. DataFrame的其他主要操作](#3-dataframe的其他主要操作)
+    - [七、DataSet API操作初识](#七dataset-api操作初识)
+    - [八、External data source](#八external-data-source)
+        - [8.1 scala操作parquet文件](#81-scala操作parquet文件)
+        - [8.2 sql操作parquet（在spark-sql运行）](#82-sql操作parquet在spark-sql运行)
+        - [8.3 外部数据源API操作MySQL](#83-外部数据源api操作mysql)
+        - [8.4 关联MySQL和Hive表数据](#84-关联mysql和hive表数据)
+- [第三部分——[实战]使用Spark SQL离线处理慕课网日志](#第三部分实战使用spark-sql离线处理慕课网日志)
     - [一、项目梳理](#一项目梳理)
-- [Spark Streaming](#spark-streaming)
+        - [1.1 日志数据内容](#11-日志数据内容)
+        - [1.2 数据处理流程](#12-数据处理流程)
+        - [1.3 项目需求](#13-项目需求)
+        - [1.4 慕课网主站日志介绍](#14-慕课网主站日志介绍)
+        - [1.5 日志清洗：](#15-日志清洗)
+        - [1.6 ip解析包的下载](#16-ip解析包的下载)
+- [第四部分——Spark Streaming](#第四部分spark-streaming)
     - [一、实时流处理的概述](#一实时流处理的概述)
     - [二、日志收集框架Flume](#二日志收集框架flume)
     - [三、消息队列Kafka](#三消息队列kafka)
     - [四、Spark Streaming](#四spark-streaming)
     - [五、Spark Streaming集成Kafka](#五spark-streaming集成kafka)
     - [六、Spark Streaming集成Kafka和Flume](#六spark-streaming集成kafka和flume)
-
 
 本项目分为Java版本和Scala版本。在学习的时候使用Scala，因为企业生产中都是使用Java来编写的，因此之后用Java进行重构。
 
@@ -153,7 +202,10 @@ Spark SQL 主要用于结构化数据的处理。其具有以下特点：
 - 支持标准的 JDBC 和 ODBC 连接；
 - 支持优化器，列式存储和代码生成等特性，以提高查询效率。
 
-## 四、Spark SQL操作数据
+<div align="center"> <img src="pictures/sql-hive-arch.png"/> </div>
+
+
+## 三、Spark SQL操作数据
 
 主要由以下的方法：
 
@@ -163,7 +215,9 @@ Spark SQL 主要用于结构化数据的处理。其具有以下特点：
 4. thriftserver/beeline的使用
 5. jdbc方式编程访问
 
-### 4.1 SQLContext的用法
+下面的代码存放于sparksqloperatedata文件夹中。
+
+### 3.1 SQLContext的用法
 
 在IDEA中使用maven创建一个scala项目，然后设置pom.xml文件,可从提供的项目中直接复制。准备一份json文件，这份文件在spark目录中的examples/src/main/resources文件夹中，复制一份 cp people.json ~/app/data
 
@@ -320,35 +374,40 @@ public class SQLConetextJ {
 
 ```
 
-### 4.2 HiveContext的使用
+### 3.2 HiveContext的使用
 
 spark操作hive，编写的代码基本与SQLContext一致。
 
-```java
-import org.apache.spark.{SparkConf, SparkContext}
-import org.apache.spark.sql.hive.HiveContext
+scala版本
 
-/**
- * HiveContextApp的基本操作
- * 在编译的时候，需要用--jars把连接mysql的jar包路径导入进来
- */
+```scala
+
+import org.apache.spark.sql.hive.HiveContext
+import org.apache.spark.{SparkConf, SparkContext}
+
 object HiveContextApp {
+
   def main(args: Array[String]): Unit = {
 
-    //1.创建相应的context
+    // 1. 设置sparkConf
     val sparkConf = new SparkConf()
+    //本地测试的时候要使用这句话，如果提交到服务器时，这句话可以不写
     sparkConf.setAppName("HiveContextApp").setMaster("local[2]")
 
-    val sc = new SparkContext(sparkConf)
-    val hiveContext = new HiveContext(sc)
+    // 2. 设置spark环境
+    val sparkContext = new SparkContext(sparkConf)
 
+    //3. 设置hivecontext
+    val hiveContext = new HiveContext(sparkContext)
 
-    //2.进行相关的处理
-    hiveContext.table("emp").show()
+    //4. 进行相关处理
+    hiveContext.table("emp").show
 
-    //3.关闭资源
-    sc.stop()
+    //5. 关闭资源
+    sparkContext.stop()
+
   }
+
 }
 
 ```
@@ -364,39 +423,111 @@ object HiveContextApp {
   /home/willhope/lib/sql-1.0.jar \
 ```
 
-### 4.3 Spark session的使用
-
-Spark session是spark2.x推荐的，可以替代SQLContext和HiveContext的作用，而且代码量大大降低
+java代码：
 
 ```java
+import org.apache.spark.SparkConf;
+import org.apache.spark.SparkContext;
+import org.apache.spark.sql.hive.HiveContext;
 
-import org.apache.spark.sql.SparkSession
+public class HiveConetextJ {
 
-/**
- * SparkSession的使用
- */
-object SparkSessionApp {
-  def main(args: Array[String]): Unit = {
+    public static void main(String[] args) {
 
-    val spark = SparkSession.builder().appName("SparkSessionApp").master("local[2]").getOrCreate()
-    val people = spark.read.json("file:///home/willhope/sparkdata/people.json")
-    people.show()
+        // 1. 设置spark配置
+        SparkConf sparkConf = new SparkConf().setMaster("local[2]").setAppName("HiveConetextJ");
 
-    spark.stop()
-  }
+        // 2. 创建spark环境
+        SparkContext sc = new SparkContext(sparkConf);
+
+        // 3. 设置hive环境
+        HiveContext hiveContext = new HiveContext(sc);
+
+        // 4. 相关处理
+        hiveContext.table("emp").show();
+
+        // 5. 关闭资源
+        sc.stop();
+
+    }
+
 }
 
 ```
 
-- spark-shell的使用
+### 3.3 SparkSession的使用
+
+Spark session是spark2.x推荐的，可以替代SQLContext和HiveContext的作用，而且代码量大大降低
+
+scala版本：
+
+```scala
+import org.apache.spark.sql.SparkSession
+
+object SparkSessionApp {
+
+  def main(args: Array[String]): Unit = {
+
+    // 1. 使用SparkSession加载主类
+    val sparkSession  = SparkSession.builder().appName("SparkSessionApp").master("local[2]").getOrCreate()
+
+    // 2. 读取json文件
+//    sparkSession.read.format("json").load("")
+    //或者使用
+    val people = sparkSession.read.json("file:///home/willhope/app/data/people.json")
+    people.show()
+
+    sparkSession.stop()
+
+  }
+}
+
+
+```
+
+java版本：
+
+
+```java
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+
+public class SparkSessionJ {
+
+
+    public static void main(String[] args) {
+
+
+        // 1. 设置文件路径
+
+        String inputPath = "/home/willhope/app/data/people.json";
+
+        // 2. 创建SparkSession
+        SparkSession sparkSession = SparkSession.builder().master("local[2]").appName("SparkSessionJ").getOrCreate();
+
+
+        // 3. 进行相关的处理
+        Dataset<Row> people = sparkSession.read().json(inputPath);
+        people.printSchema();
+        people.show();
+
+        sparkSession.stop();
+    }
+
+}
+
+```
+
+### 3.4 Spark-shell的使用
 
 在使用前，将hadoop所有项启动，hive启动起来。
 
-要在Spark-shell访问hive，要先切换到hive目录下的conf目录，将hive-site.xml文件拷贝到Spark目录下的conf。cp hive-site.xml /home/willhope/app/spark-2.4.4-bin-2.6.0-cdh5.15.1/conf/，然后将hive目录下的lib下的mysql驱动jar包拷贝到spark目录下的jars中。也可以在spark目录下的bin目录下，添加路径执行./spark-shell --master local[2] --jars /home/willhope/software
+要在Spark-shell访问hive，要先切换到hive目录下的conf目录，将hive-site.xml文件拷贝到Spark目录下的conf。cp hive-site.xml /home/willhope/app/spark-2.4.4-bin-2.6.0-cdh5.15.1/conf/，然后将hive目录下的lib下的mysql驱动jar包拷贝到spark目录下的jars中。也可以在spark目录下的bin目录下，添加路径执行./spark-shell --master local[2] --jars /home/willhope/software/mysql-connector-java-5.1.47.jar
 
 配置好了一切后，启动./spark-shell --master local[2]，然后输入spark.sql("show tables").show，可访问hive下的表，注意，sql()的括号中用来写sql语句。
 
-```bash
+```sql
 
   1. spark.sql("show tables").show
   # 结果
@@ -436,13 +567,35 @@ object SparkSessionApp {
   +---------------+--------------------+--------------------+-------------------+-------+--------+------+----+----------+
   only showing top 20 rows
 
+  3.  spark.sql("select * from emp e join dept d on e.deptno=d.deptno").show
+  # 结果
+  +-----+------+---------+----+----------+------+------+------+------+----------+--------+
+  |empno| ename|      job| mgr|  hiredate|   sal|  comm|deptno|deptno|     dname|     loc|
+  +-----+------+---------+----+----------+------+------+------+------+----------+--------+
+  | 7369| SMITH|    CLERK|7902|1980-12-17| 800.0|  null|    20|    20|  RESEARCH|  DALLAS|
+  | 7499| ALLEN| SALESMAN|7698| 1981-2-20|1600.0| 300.0|    30|    30|     SALES| CHICAGO|
+  | 7521|  WARD| SALESMAN|7698| 1981-2-22|1250.0| 500.0|    30|    30|     SALES| CHICAGO|
+  | 7566| JONES|  MANAGER|7839|  1981-4-2|2975.0|  null|    20|    20|  RESEARCH|  DALLAS|
+  | 7654|MARTIN| SALESMAN|7698| 1981-9-28|1250.0|1400.0|    30|    30|     SALES| CHICAGO|
+  | 7698| BLAKE|  MANAGER|7839|  1981-5-1|2850.0|  null|    30|    30|     SALES| CHICAGO|
+  | 7782| CLARK|  MANAGER|7839|  1981-6-9|2450.0|  null|    10|    10|ACCOUNTING|NEW YORK|
+  | 7788| SCOTT|  ANALYST|7566| 1987-4-19|3000.0|  null|    20|    20|  RESEARCH|  DALLAS|
+  | 7839|  KING|PRESIDENT|null|1981-11-17|5000.0|  null|    10|    10|ACCOUNTING|NEW YORK|
+  | 7844|TURNER| SALESMAN|7698|  1981-9-8|1500.0|   0.0|    30|    30|     SALES| CHICAGO|
+  | 7876| ADAMS|    CLERK|7788| 1987-5-23|1100.0|  null|    20|    20|  RESEARCH|  DALLAS|
+  | 7900| JAMES|    CLERK|7698| 1981-12-3| 950.0|  null|    30|    30|     SALES| CHICAGO|
+  | 7902|  FORD|  ANALYST|7566| 1981-12-3|3000.0|  null|    20|    20|  RESEARCH|  DALLAS|
+  | 7934|MILLER|    CLERK|7782| 1982-1-23|1300.0|  null|    10|    10|ACCOUNTING|NEW YORK|
+  +-----+------+---------+----+----------+------+------+------+------+----------+--------+
+
+
 ```
 
-- Spark sql的使用
+### 3.5 Spark-sql的使用
 
 其实与spark-shell用法相同，在spark目录下的bin目录下，添加路径执行./spark-sql --master local[2]，可以在浏览器输入 http://willhope-pc:4040/jobs/ 查看，这里启动后，其实就相当于启动了一个mysql控制台那种，可以直接写sql语句。在浏览器中刷新，可以看到刚才作业的完成情况。
 
-  ```s
+  ```sql
   # 创建一张表
   create table t(key string,value string);
 
@@ -490,207 +643,454 @@ object SparkSessionApp {
 
   ```
 
-- thriftserver/beeline的使用，前者是服务器，后者是客户端的意思，hive中的server称为hiveserver
+### 3.6 thriftserver/beeline的使用
 
-```s
+前者是服务器，后者是客户端的意思，hive中的server称为hiveserver，spark中的server称为thriftserver。
 
-在spark目录中的sbin目录下启动./sbin/start-thriftserver.sh
-可在 http://willhope-pc:4041/sqlserver/ 中查看，这里本应该是4040，但是如果之前启动了spark-sql，那么这个端口应该更改为4041，因为端口被占用，然后会自动加1
+1. 在spark目录中的sbin目录下启动./sbin/start-thriftserver.sh。可在 http://willhope-pc:4041/sqlserver/ 中查看，这里本应该是4040，但是如果之前启动了spark-sql，那么这个端口应该更改为4041，因为端口被占用，然后会自动加1
 
-在spark目录中bin目录下启动beeline
-./beeline -u jdbc:hive2://localhost:10000 -n willhope （注意这里的用户名是系统用户名）
+2. 在spark目录中bin目录下启动beeline。./beeline -u jdbc:hive2://localhost:10000 -n willhope （注意这里的用户名是系统用户名），这个可以启动多个。
 
-启动成功后，出现 0: jdbc:hive2://localhost:10000> 
+3. 启动成功后，出现 0: jdbc:hive2://localhost:10000> 
 
-执行show tables;即可查看hive中表的情况
- 
-在 http://willhope-pc:4041/sqlserver/ 中刷新，可以查看作业执行情况。
+4. 执行show tables;即可查看hive中表的情况。在 http://willhope-pc:4041/sqlserver/ 中刷新，可以查看作业执行情况。
 
-修改thriftserver启动占用的默认端口号：
+5. 修改thriftserver启动占用的默认端口号：
+
+```
 ./start-thriftserver.sh  \
 --master local[2] \
 --jars ~/software/mysql-connector-java-5.1.27-bin.jar  \   这句如果添加了mysql的jar到jars目录中，则不用写
 --hiveconf hive.server2.thrift.port=14000 
 
 beeline -u jdbc:hive2://localhost:14000 -n willhope
-
-
-thriftserver和普通的spark-shell/spark-sql有什么区别？
-1）spark-shell、spark-sql都是一个spark  application；
-2）thriftserver， 不管你启动多少个客户端(beeline/code)，只要连到一个server，永远都是一个spark application
-这里已经解决了一个数据共享的问题，多个客户端可以共享数据；
-
 ```
 
-- jdbc编程访问
+6. thriftserver和普通的spark-shell/spark-sql有什么区别？
+  - spark-shell、spark-sql都是一个spark  application；
+  - thriftserver， 不管你启动多少个客户端(beeline/code)，只要连到一个server，永远都是一个spark application
+这里已经解决了一个数据共享的问题，多个客户端可以共享数据；
 
-```java
+
+### 3.7 jdbc编程访问
+
+使用jdbc访问hive。
+
+scala版本：
+
+```scala
 import java.sql.DriverManager
 
 /**
- * 通过jdbc访问
+ *  jdbc编程访问
  */
-
 object SparkSQLThriftServerApp {
+
   def main(args: Array[String]): Unit = {
 
     Class.forName("org.apache.hive.jdbc.HiveDriver")
 
-    val conn = DriverManager.getConnection("jdbc:hive2://localhost:10000","willhope","") //密码不写
-    val pstmt = conn.prepareStatement("select province , cnt  from track_info_province_stat")
-    val rs = pstmt.executeQuery()
-    while (rs.next()){
-      println("province:"+rs.getString("province")+"\t cnt:"+rs.getLong("cnt"))
+    val connection = DriverManager.getConnection("jdbc:hive2://localhost:10000","willhope","") //密码不写
+    val pstmt = connection.prepareStatement("select empno,ename from emp")
+    val res = pstmt.executeQuery()
+    while (res.next()){
+      println("empno:"+res.getInt("empno") + ",ename:" + res.getString("ename"))
     }
 
-    rs.close()
+    res.close()
     pstmt.close()
-    conn.close()
+    connection.close()
   }
+
 }
-
-
-//结果
-province:-	 cnt:923
-province:上海市	 cnt:72898
-province:云南省	 cnt:1480
-province:内蒙古自治区	 cnt:1298
-province:北京市	 cnt:42501
-province:台湾省	 cnt:254
-province:吉林省	 cnt:1435
-province:四川省	 cnt:4442
-province:天津市	 cnt:11042
-province:宁夏	 cnt:352
-province:安徽省	 cnt:5429
-province:山东省	 cnt:10145
-province:山西省	 cnt:2301
-province:广东省	 cnt:51508
-province:广西	 cnt:1681
-province:新疆	 cnt:840
-province:江苏省	 cnt:25042
-province:江西省	 cnt:2238
-province:河北省	 cnt:7294
-province:河南省	 cnt:5279
-province:浙江省	 cnt:20627
-province:海南省	 cnt:814
-province:湖北省	 cnt:7187
-province:湖南省	 cnt:2858
-province:澳门特别行政区	 cnt:6
-province:甘肃省	 cnt:1039
-province:福建省	 cnt:8918
-province:西藏	 cnt:110
-province:贵州省	 cnt:1084
-province:辽宁省	 cnt:2341
-province:重庆市	 cnt:1798
-province:陕西省	 cnt:2487
-province:青海省	 cnt:336
-province:香港特别行政区	 cnt:45
-province:黑龙江省	 cnt:1968
 
 ```
 
-### 五、DataFrame & Dataset
-
-- RDD、DataFrame和Dataset是什么鬼？
-
-1. 先看一下Spark中的RDD，DataFrame和Datasets的定义：
-
-    Spark RDD
-
-    RDD代表弹性分布式数据集。**它是数据库记录的只读分区集合**。 RDD是Spark的基本数据结构。它允许程序员以容错方式在大型集群上执行内存计算。
-
-    Spark Dataframe
-
-    与RDD不同，数据组以列的形式组织起来，**类似于关系数据库中的表**。它是一个不可变的分布式数据集合。 Spark中的DataFrame允许开发人员将数据结构(类型)加到分布式数据集合上，从而实现更高级别的抽象。
-
-    Spark Dataset
-
-    Apache Spark中的Dataset是DataFrame API的扩展，它提供了类型安全(type-safe)，面向对象(object-oriented)的编程接口。 Dataset利用优化器可以让用户通过类似于sql的表达式对数据进行查询。
-
-2. RDD、DataFrame和DataSet的比较
-
-  - Spark版本
-
-    RDD – 自Spark 1.0起
-    DataFrames – 自Spark 1.3起
-    DataSet – 自Spark 1.6起
-
-  - 数据表示形式
-
-    RDD是分布在集群中许多机器上的数据元素的分布式集合。 RDD是一组表示数据的Java或Scala对象。
-
-    DataFrame是命名列构成的分布式数据集合。 它在概念上类似于关系数据库中的表。
-
-    Dataset是DataFrame API的扩展，提供RDD API的类型安全，面向对象的编程接口以及Catalyst查询优化器的性能优势和DataFrame API的堆外存储机制的功能。
-
-  - 数据格式
-
-    RDD可以轻松有效地处理结构化和非结构化的数据。 和Dataframe和DataSet一样，RDD不会推断出所获取的数据的结构类型，需要用户来指定它。
-
-    DataFrame仅适用于结构化和半结构化数据。 它的数据以命名列的形式组织起来。
-
-    DataSet可以有效地处理结构化和非结构化数据。 它表示行(row)的JVM对象或行对象集合形式的数据。 它通过编码器以表格形式(tabular forms)表示。
-  
-  - 编译时类型安全
-
-    RDD提供了一种熟悉的面向对象编程风格，具有编译时类型安全性。
-
-    DataFrame如果您尝试访问表中不存在的列，则持编译错误。 它仅在运行时检测属性错误。
-
-    DataSet可以在编译时检查类型, 它提供编译时类型安全性。
-
-  - 序列化
-
-    RDD每当Spark需要在集群内分发数据或将数据写入磁盘时，它就会使用Java序列化。序列化单个Java和Scala对象的开销很昂贵，并且需要在节点之间发送数据和结构。
-
-    Spark DataFrame可以将数据序列化为二进制格式的堆外存储（在内存中），然后直接在此堆内存上执行许多转换。无需使用java序列化来编码数据。它提供了一个Tungsten物理执行后端，来管理内存并动态生成字节码以进行表达式评估。
-
-    DataSet在序列化数据时，Spark中的数据集API具有编码器的概念，该编码器处理JVM对象与表格表示之间的转换。它使用spark内部Tungsten二进制格式存储表格表示。数据集允许对序列化数据执行操作并改善内存使用。它允许按需访问单个属性，而不会消灭整个对象。
-
-  - 垃圾回收
-  
-    RDD 创建和销毁单个对象会导致垃圾回收。
-
-    DataFrame 避免在为数据集中的每一行构造单个对象时引起的垃圾回收。
-
-    DataSet因为序列化是通过Tungsten进行的，它使用了off heap数据序列化，不需要垃圾回收器来摧毁对象
-
-  - 效率/内存使用
-
-    RDD 在java和scala对象上单独执行序列化时，效率会降低，这需要花费大量时间。
-
-    DataFrame 使用off heap内存进行序列化可以减少开销。 它动态生成字节代码，以便可以对该序列化数据执行许多操作。 无需对小型操作进行反序列化。
-
-    DataSet它允许对序列化数据执行操作并改善内存使用。 因此，它可以允许按需访问单个属性，而无需反序列化整个对象。
-
-  - 编程语言支持
-
-    RDD 提供Java，Scala，Python和R语言的API。 因此，此功能为开发人员提供了灵活性。
-
-    DataFrame同样也提供Java，Scala，Python和R语言的API。
-
-    DataSet 的一些API目前仅支持Scala和Java，对Python和R语言的API在陆续开发中。
-  
-  - 聚合操作(Aggregation)
-
-    RDD API执行简单的分组和聚合操作的速度较慢。
-
-    DataFrame API非常易于使用。 探索性分析更快，在大型数据集上创建汇总统计数据。
-
-    Dataset中，对大量数据集执行聚合操作的速度更快。
-
-结论
-
-1. 当我们需要对数据集进行底层的转换和操作时， 可以选择使用RDD
-2. 当我们需要高级抽象时，可以使用DataFrame和Dataset API。
-3. 对于非结构化数据，例如媒体流或文本流，同样可以使用DataFrame和Dataset API。
-4. 我们可以使用DataFrame和Dataset 中的高级的方法。 例如，filter, maps, aggregation, sum, SQL queries以及通过列访问数据等，如果您不关心在按名称或列处理或访问数据属性时强加架构（例如列式格式）。另外，如果我们想要在编译时更高程度的类型安全性。RDD提供更底层功能， DataFrame和Dataset则允许创建一些自定义的结构，拥有高级的特定操作，节省空间并高速执行。为了确保我们的代码能够尽可能的利用Tungsten优化带来的好处，推荐使用Scala的 Dataset API（而不是RDD API）。Dataset即拥有DataFrame带来的relational transformation的便捷，也拥有RDD中的functional transformation的优势。
-
-### 六、DataFrame和DataSet的实战
-
-- DataFrame的基本操作
+java版本：
 
 ```java
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+
+public class ThriftServerJ {
+
+    public static void main(String[] args) throws Exception{
+
+        Class.forName("org.apache.hive.jdbc.HiveDriver");
+
+        Connection connection = DriverManager.getConnection("jdbc:hive2://localhost:10000","willhope","");
+
+        PreparedStatement pstmt = connection.prepareStatement("select empno,ename from emp");
+
+        ResultSet res = pstmt.executeQuery();
+
+        while ((res.next())){
+            System.out.println("empno:"+res.getInt("empno") + ",ename:" + res.getString("ename"));
+        }
+
+        res.close();
+        pstmt.close();
+        connection.close();
+
+    }
+
+}
+
+```
+
+## 四、RDD介绍
+
+### 4.1 Spark RDD 定义与特点
+
+`RDD` 全称为 Resilient Distributed Datasets(弹性分布式数据集)，是 Spark 最基本的数据抽象，它是只读的、分区记录的集合，支持并行操作，可以由外部数据集或其他 RDD 转换而来，它具有以下特性：
+
++ 一个 RDD 由一个或者多个分区（Partitions）组成。对于 RDD 来说，每个分区会被一个计算任务所处理，用户可以在创建 RDD 时指定其分区个数，如果没有指定，则默认采用程序所分配到的 CPU 的核心数；
++ RDD 拥有一个用于计算分区的函数 compute；
++ RDD 会保存彼此间的依赖关系，RDD 的每次转换都会生成一个新的依赖关系，这种 RDD 之间的依赖关系就像流水线一样。在部分分区数据丢失后，可以通过这种依赖关系重新计算丢失的分区数据，而不是对 RDD 的所有分区进行重新计算；
++ Key-Value 型的 RDD 还拥有 Partitioner(分区器)，用于决定数据被存储在哪个分区中，目前 Spark 中支持 HashPartitioner(按照哈希分区) 和 RangeParationer(按照范围进行分区)；
++ 一个优先位置列表 (可选)，用于存储每个分区的优先位置 (prefered location)。对于一个 HDFS 文件来说，这个列表保存的就是每个分区所在的块的位置，按照“移动数据不如移动计算“的理念，Spark 在进行任务调度的时候，会尽可能的将计算任务分配到其所要处理数据块的存储位置。
+
+`RDD[T]` 抽象类的部分相关代码如下：
+
+```scala
+// 由子类实现以计算给定分区
+def compute(split: Partition, context: TaskContext): Iterator[T]
+
+// 获取所有分区
+protected def getPartitions: Array[Partition]
+
+// 获取所有依赖关系
+protected def getDependencies: Seq[Dependency[_]] = deps
+
+// 获取优先位置列表
+protected def getPreferredLocations(split: Partition): Seq[String] = Nil
+
+// 分区器 由子类重写以指定它们的分区方式
+@transient val partitioner: Option[Partitioner] = None
+```
+
+### 4.2 创建RDD
+
+RDD 有两种创建方式，分别介绍如下：
+
+#### 1. 由现有集合创建
+
+这里使用 `spark-shell` 进行测试，启动命令如下：
+
+```shell
+spark-shell --master local[4]
+```
+
+启动 `spark-shell` 后，程序会自动创建应用上下文，相当于执行了下面的 Scala 语句：
+
+```scala
+val conf = new SparkConf().setAppName("Spark shell").setMaster("local[4]")
+val sc = new SparkContext(conf)
+```
+
+由现有集合创建 RDD，你可以在创建时指定其分区个数，如果没有指定，则采用程序所分配到的 CPU 的核心数：
+
+```scala
+val data = Array(1, 2, 3, 4, 5)
+// 由现有集合创建 RDD,默认分区数为程序所分配到的 CPU 的核心数
+val dataRDD = sc.parallelize(data) 
+// 查看分区数
+dataRDD.getNumPartitions
+// 明确指定分区数
+val dataRDD = sc.parallelize(data,2)
+```
+
+执行结果如下：
+
+<div align="center"> <img src="pictures/scala-分区数.png"/> </div>
+
+#### 2. 引用外部存储系统中的数据集
+
+引用外部存储系统中的数据集，例如本地文件系统，HDFS，HBase 或支持 Hadoop InputFormat 的任何数据源。
+
+```scala
+val fileRDD = sc.textFile("/usr/file/emp.txt")
+// 获取第一行文本
+fileRDD.take(1)
+```
+
+使用外部存储系统时需要注意以下两点：
+
++ 如果在集群环境下从本地文件系统读取数据，则要求该文件必须在集群中所有机器上都存在，且路径相同；
++ 支持目录路径，支持压缩文件，支持使用通配符。
+
+### 4.3 textFile & wholeTextFiles
+
+两者都可以用来读取外部文件，但是返回格式是不同的：
+
++ **textFile**：其返回格式是 `RDD[String]` ，返回的是就是文件内容，RDD 中每一个元素对应一行数据；
++ **wholeTextFiles**：其返回格式是 `RDD[(String, String)]`，元组中第一个参数是文件路径，第二个参数是文件内容；
++ 两者都提供第二个参数来控制最小分区数；
++ 从 HDFS 上读取文件时，Spark 会为每个块创建一个分区。
+
+```scala
+def textFile(path: String,minPartitions: Int = defaultMinPartitions): RDD[String] = withScope {...}
+def wholeTextFiles(path: String,minPartitions: Int = defaultMinPartitions): RDD[(String, String)]={..}
+```
+
+### 4.4 操作RDD
+
+RDD 支持两种类型的操作：*transformations*（转换，从现有数据集创建新数据集）和 *actions*（在数据集上运行计算后将值返回到驱动程序）。RDD 中的所有转换操作都是惰性的，它们只是记住这些转换操作，但不会立即执行，只有遇到 *action* 操作后才会真正的进行计算，这类似于函数式编程中的惰性求值。
+
+```scala
+val list = List(1, 2, 3)
+// map 是一个 transformations 操作，而 foreach 是一个 actions 操作
+sc.parallelize(list).map(_ * 10).foreach(println)
+// 输出： 10 20 30
+```
+
+### 4.5 缓存RDD
+
+#### 1. 缓存级别
+
+Spark 速度非常快的一个原因是 RDD 支持缓存。成功缓存后，如果之后的操作使用到了该数据集，则直接从缓存中获取。虽然缓存也有丢失的风险，但是由于 RDD 之间的依赖关系，如果某个分区的缓存数据丢失，只需要重新计算该分区即可。
+
+Spark 支持多种缓存级别 ：
+
+| Storage Level<br/>（存储级别）                 | Meaning（含义）                                              |
+| ---------------------------------------------- | ------------------------------------------------------------ |
+| `MEMORY_ONLY`                                  | 默认的缓存级别，将 RDD 以反序列化的 Java 对象的形式存储在 JVM 中。如果内存空间不够，则部分分区数据将不再缓存。 |
+| `MEMORY_AND_DISK`                              | 将 RDD 以反序列化的 Java 对象的形式存储 JVM 中。如果内存空间不够，将未缓存的分区数据存储到磁盘，在需要使用这些分区时从磁盘读取。 |
+| `MEMORY_ONLY_SER`<br/>     | 将 RDD 以序列化的 Java 对象的形式进行存储（每个分区为一个 byte 数组）。这种方式比反序列化对象节省存储空间，但在读取时会增加 CPU 的计算负担。仅支持 Java 和 Scala 。  |
+| `MEMORY_AND_DISK_SER`<br/> | 类似于 `MEMORY_ONLY_SER`，但是溢出的分区数据会存储到磁盘，而不是在用到它们时重新计算。仅支持 Java 和 Scala。 |
+| `DISK_ONLY`                                    | 只在磁盘上缓存 RDD                                            |
+| `MEMORY_ONLY_2`, <br/>`MEMORY_AND_DISK_2`, etc | 与上面的对应级别功能相同，但是会为每个分区在集群中的两个节点上建立副本。 |
+| `OFF_HEAP`                                     | 与 `MEMORY_ONLY_SER` 类似，但将数据存储在堆外内存中。这需要启用堆外内存。 |
+
+> 启动堆外内存需要配置两个参数：
+>
+> + **spark.memory.offHeap.enabled** ：是否开启堆外内存，默认值为 false，需要设置为 true；
+> + **spark.memory.offHeap.size** : 堆外内存空间的大小，默认值为 0，需要设置为正值。
+
+#### 2. 使用缓存
+
+缓存数据的方法有两个：`persist` 和 `cache` 。`cache` 内部调用的也是 `persist`，它是 `persist` 的特殊化形式，等价于 `persist(StorageLevel.MEMORY_ONLY)`。示例如下：
+
+```scala
+// 所有存储级别均定义在 StorageLevel 对象中
+fileRDD.persist(StorageLevel.MEMORY_AND_DISK)
+fileRDD.cache()
+```
+
+#### 3. 移除缓存
+
+Spark 会自动监视每个节点上的缓存使用情况，并按照最近最少使用（LRU）的规则删除旧数据分区。当然，你也可以使用 `RDD.unpersist()` 方法进行手动删除。
+
+
+### 4.6 理解shuffle
+
+#### 1. shuffle介绍
+
+在 Spark 中，一个任务对应一个分区，通常不会跨分区操作数据。但如果遇到 `reduceByKey` 等操作，Spark 必须从所有分区读取数据，并查找所有键的所有值，然后汇总在一起以计算每个键的最终结果 ，这称为 `Shuffle`。
+
+<div align="center"> <img width="600px" src="pictures/spark-reducebykey.png"/> </div>
+
+
+#### 2. Shuffle的影响
+
+Shuffle 是一项昂贵的操作，因为它通常会跨节点操作数据，这会涉及磁盘 I/O，网络 I/O，和数据序列化。某些 Shuffle 操作还会消耗大量的堆内存，因为它们使用堆内存来临时存储需要网络传输的数据。Shuffle 还会在磁盘上生成大量中间文件，从 Spark 1.3 开始，这些文件将被保留，直到相应的 RDD 不再使用并进行垃圾回收，这样做是为了避免在计算时重复创建 Shuffle 文件。如果应用程序长期保留对这些 RDD 的引用，则垃圾回收可能在很长一段时间后才会发生，这意味着长时间运行的 Spark 作业可能会占用大量磁盘空间，通常可以使用 `spark.local.dir` 参数来指定这些临时文件的存储目录。
+
+#### 3. 导致Shuffle的操作
+
+由于 Shuffle 操作对性能的影响比较大，所以需要特别注意使用，以下操作都会导致 Shuffle：
+
++ **涉及到重新分区操作**： 如 `repartition` 和 `coalesce`；
++ **所有涉及到 ByKey 的操作**：如 `groupByKey` 和 `reduceByKey`，但 `countByKey` 除外；
++ **联结操作**：如 `cogroup` 和 `join`。
+
+
+### 4.7 宽依赖和窄依赖
+
+RDD 和它的父 RDD(s) 之间的依赖关系分为两种不同的类型：
+
+- **窄依赖 (narrow dependency)**：父 RDDs 的一个分区最多被子 RDDs 一个分区所依赖；
+- **宽依赖 (wide dependency)**：父 RDDs 的一个分区可以被子 RDDs 的多个子分区所依赖。
+
+如下图，每一个方框表示一个 RDD，带有颜色的矩形表示分区：
+
+<div align="center"> <img width="600px" src="pictures/spark-窄依赖和宽依赖.png"/> </div>
+
+区分这两种依赖是非常有用的：
+
++ 首先，窄依赖允许在一个集群节点上以流水线的方式（pipeline）对父分区数据进行计算，例如先执行 map 操作，然后执行 filter 操作。而宽依赖则需要计算好所有父分区的数据，然后再在节点之间进行 Shuffle，这与 MapReduce 类似。
++ 窄依赖能够更有效地进行数据恢复，因为只需重新对丢失分区的父分区进行计算，且不同节点之间可以并行计算；而对于宽依赖而言，如果数据丢失，则需要对所有父分区数据进行计算并再次 Shuffle。
+
+### 4.8 DAG的生成
+
+RDD(s) 及其之间的依赖关系组成了 DAG(有向无环图)，DAG 定义了这些 RDD(s) 之间的 Lineage(血统) 关系，通过血统关系，如果一个 RDD 的部分或者全部计算结果丢失了，也可以重新进行计算。那么 Spark 是如何根据 DAG 来生成计算任务呢？主要是根据依赖关系的不同将 DAG 划分为不同的计算阶段 (Stage)：
+
++ 对于窄依赖，由于分区的依赖关系是确定的，其转换操作可以在同一个线程执行，所以可以划分到同一个执行阶段；
++ 对于宽依赖，由于 Shuffle 的存在，只能在父 RDD(s) 被 Shuffle 处理完成后，才能开始接下来的计算，因此遇到宽依赖就需要重新划分阶段。
+
+<div align="center"> <img width="600px" height="600px" src="pictures/spark-DAG.png"/> </div>
+
+
+## 五、DataFrame & Dataset
+
+### 5.1 Spark Dataframe
+
+为了支持结构化数据的处理，Spark SQL 提供了新的数据结构 DataFrame。与RDD不同，DataFrame 是一个由列(列名、列的属性)组成的数据集。它在概念上等同于关系数据库中的表或 R/Python 语言中的 `data frame`。它是一个不可变的分布式数据集合。 Spark中的DataFrame允许开发人员将数据结构(类型)加到分布式数据集合上，从而实现更高级别的抽象。 由于 Spark SQL 支持多种语言的开发，所以每种语言都定义了 `DataFrame` 的抽象，主要如下：
+
+| 语言   | 主要抽象                                     |
+| ------ | -------------------------------------------- |
+| Scala  | Dataset[T] & DataFrame (Dataset[Row] 的别名)  |
+| Java   | Dataset[T]                                   |
+| Python | DataFrame                                    |
+| R      | DataFrame                                    |
+
+` 注 ：` Dataframe的本质就是一个Dataset，这也就是为什么使用Java编写使用Dataframe时，写的是Dataset<Row>。也可以理解为是在RDD上加了一个schema，因为RDD只是一个分布式数据集，没有列名、列属性等等，给RDD套上一个schema形成以一个表结构式的数据，就是Dataframe，且1.3版本以前，Dataframe就称为SchemaRDD。 
+
+### 5.2. Spark Dataset
+
+Apache Spark中的Dataset是DataFrame API的扩展，它提供了类型安全(type-safe)，面向对象(object-oriented)的编程接口。 Dataset利用优化器可以让用户通过类似于sql的表达式对数据进行查询。Dataset 也是分布式的数据集合，集成了 RDD 和 DataFrame 的优点，具备强类型的特点，同时支持 Lambda 函数，但只能在 Scala 和 Java 语言中使用。在 Spark 2.0 后，为了方便开发者，Spark 将 DataFrame 和 Dataset 的 API 融合到一起，提供了结构化的 API(Structured API)，即用户可以通过一套标准的 API 就能完成对两者的操作。
+
+### 5.3 RDD、DataFrame和DataSet的比较
+
+#### 1. 起始版本
+
+RDD – 自Spark 1.0起
+
+DataFrames – 自Spark 1.3起
+
+DataSet – 自Spark 1.6起
+
+#### 2. 数据表示形式
+
+RDD是分布在集群中许多机器上的数据元素的分布式集合。 RDD是一组表示数据的Java或Scala对象。例如下图中，RDD操作Person对象，而不知道Person中具体的值，属性。
+
+DataFrame是命名列构成的分布式数据集合。 它在概念上类似于关系数据库中的表。例如下图中，Dataframe知道每个person的属性，值，以及属性所定义的数据类型，可方便操作某一个属性及其值。
+
+Dataset是DataFrame API的扩展，提供RDD API的类型安全，面向对象的编程接口以及Catalyst查询优化器的性能优势和DataFrame API的堆外存储机制的功能。
+
+<div align="center"> <img src="pictures/spark-dataFrame+RDDs.png"/> </div>
+
+#### 3. 数据格式
+
+RDD可以轻松有效地处理结构化和非结构化的数据。 和Dataframe和DataSet一样，RDD不会推断出所获取的数据的结构类型，需要用户来指定它。
+
+DataFrame仅适用于结构化和半结构化数据。 它的数据以命名列的形式组织起来。
+
+DataSet可以有效地处理结构化和非结构化数据。 它表示行(row)的JVM对象或行对象集合形式的数据。 它通过编码器以表格形式(tabular forms)表示。
+  
+#### 4. 编译时类型安全
+
+RDD提供了一种熟悉的面向对象编程风格，具有编译时类型安全性。
+
+DataFrame如果您尝试访问表中不存在的列，则编译错误。 它仅在运行时检测属性错误。
+
+DataSet可以在编译时检查类型, 它提供编译时类型安全性。
+
+**编译时类型(静态类型)与运行时类型安全的解释**
+
+静态类型 (Static-typing) 与运行时类型安全 (runtime type-safety) 主要表现如下:
+
+在实际使用中，如果你用的是 Spark SQL 的查询语句，则直到运行时你才会发现有语法错误，而如果你用的是 DataFrame 和 Dataset，则在编译时就可以发现错误 (这节省了开发时间和整体代价)。DataFrame 和 Dataset 主要区别在于：
+
+在 DataFrame 中，当你调用了 API 之外的函数，编译器就会报错，但如果你使用了一个不存在的字段名字，编译器依然无法发现。而 Dataset 的 API 都是用 Lambda 函数和 JVM 类型对象表示的，所有不匹配的类型参数在编译时就会被发现。
+
+以上这些最终都被解释成关于类型安全图谱，对应开发中的语法和分析错误。在图谱中，Dataset 最严格，但对于开发者来说效率最高。
+
+<div align="center"> <img  width="600px"  src="pictures/spark-运行安全.png"/> </div>
+
+上面的描述可能并没有那么直观，下面的给出一个 IDEA 中代码编译的示例：
+
+<div align="center"> <img src="pictures/spark-运行时类型安全.png"/> </div>
+
+这里一个可能的疑惑是 DataFrame 明明是有确定的 Scheme 结构 (即列名、列字段类型都是已知的)，但是为什么还是无法对列名进行推断和错误判断，这是因为 DataFrame 是 Untyped 的。
+
+**Untyped & Typed的解释** 
+
+在上面我们介绍过 DataFrame API 被标记为 `Untyped API`，而 DataSet API 被标记为 `Typed API`。DataFrame 的 `Untyped` 是相对于语言或 API 层面而言，它确实有明确的 Scheme 结构，即列名，列类型都是确定的，但这些信息完全由 Spark 来维护，Spark 只会在运行时检查这些类型和指定类型是否一致。这也就是为什么在 Spark 2.0 之后，官方推荐把 DataFrame 看做是 `DatSet[Row]`，Row 是 Spark 中定义的一个 `trait`，其子类中封装了列字段的信息。
+
+相对而言，DataSet 是 `Typed` 的，即强类型。如下面代码，DataSet 的类型由 Case Class(Scala) 或者 Java Bean(Java) 来明确指定的，在这里即每一行数据代表一个 `Person`，这些信息由 JVM 来保证正确性，所以字段名错误和类型错误在编译的时候就会被 IDE 所发现。
+
+```scala
+case class Person(name: String, age: Long)
+val dataSet: Dataset[Person] = spark.read.json("people.json").as[Person]
+```
+
+#### 5. 序列化
+
+RDD每当Spark需要在集群内分发数据或将数据写入磁盘时，它就会使用Java序列化。序列化单个Java和Scala对象的开销很昂贵，并且需要在节点之间发送数据和结构。
+
+Spark DataFrame可以将数据序列化为二进制格式的堆外存储（在内存中），然后直接在此堆内存上执行许多转换。无需使用java序列化来编码数据。它提供了一个Tungsten物理执行后端，来管理内存并动态生成字节码以进行表达式评估。
+
+DataSet在序列化数据时，Spark中的数据集API具有编码器的概念，该编码器处理JVM对象与表格表示之间的转换。它使用spark内部Tungsten二进制格式存储表格表示。数据集允许对序列化数据执行操作并改善内存使用。它允许按需访问单个属性，而不会消灭整个对象。
+
+#### 6. 垃圾回收
+  
+RDD 创建和销毁单个对象会导致垃圾回收。
+
+DataFrame 避免在为数据集中的每一行构造单个对象时引起的垃圾回收。
+
+DataSet因为序列化是通过Tungsten进行的，它使用了off heap数据序列化，不需要垃圾回收器来摧毁对象
+
+#### 7. 效率/内存使用
+
+RDD 在java和scala对象上单独执行序列化时，效率会降低，这需要花费大量时间。
+
+DataFrame 使用off heap内存进行序列化可以减少开销。 它动态生成字节代码，以便可以对该序列化数据执行许多操作。 无需对小型操作进行反序列化。
+
+DataSet它允许对序列化数据执行操作并改善内存使用。 因此，它可以允许按需访问单个属性，而无需反序列化整个对象。
+
+#### 8. 编程语言支持
+
+RDD 提供Java，Scala，Python和R语言的API。 因此，此功能为开发人员提供了灵活性。
+
+DataFrame同样也提供Java，Scala，Python和R语言的API。
+
+DataSet 的一些API目前仅支持Scala和Java，对Python和R语言的API在陆续开发中。
+  
+#### 9. 聚合操作(Aggregation)
+
+RDD API执行简单的分组和聚合操作的速度较慢。
+
+DataFrame API非常易于使用。 探索性分析更快，在大型数据集上创建汇总统计数据。
+
+Dataset中，对大量数据集执行聚合操作的速度更快。
+
+### 5.4 结论
+
++ 当我们需要对数据集进行底层的转换和操作时， 可以选择使用RDD。
++ RDD 适合非结构化数据的处理，而 DataFrame & DataSet 更适合结构化数据和半结构化的处理。
++ 当我们需要高级抽象时，可以使用DataFrame和Dataset API。
++ DataFrame & DataSet 可以通过统一的 Structured API 进行访问，而 RDDs 则更适合函数式编程的场景。
++ 相比于 DataFrame 而言，DataSet 是强类型的 (Typed)，有着更为严格的静态类型检查。
++ DataSets、DataFrames、SQL 的底层都依赖了 RDDs API，并对外提供结构化的访问接口。
++ 对于非结构化数据，例如媒体流或文本流，同样可以使用DataFrame和Dataset API。
++ 我们可以使用DataFrame和Dataset 中的高级的方法。 例如，filter, maps, aggregation, sum, SQL queries以及通过列访问数据等，如果您不关心在按名称或列处理或访问数据属性时强加架构（例如列式格式）。
++ 如果我们想要在编译时更高程度的类型安全性。RDD提供更底层功能， DataFrame和Dataset则允许创建一些自定义的结构，拥有高级的特定操作，节省空间并高速执行。为了确保我们的代码能够尽可能的利用Tungsten优化带来的好处，推荐使用Scala的 Dataset API（而不是RDD API）。Dataset即拥有DataFrame带来的relational transformation的便捷，也拥有RDD中的functional transformation的优势。
+
+<div align="center"> <img  width="600px"  src="pictures/spark-structure-api.png"/> </div>
+
+## 六、DataFrame API操作初识
+
+### 6.1 DataFrame的基本操作
+
+方法介绍：
+
+
+| 方法名     |  方法介绍    |
+|:-------:  |:---------:  |
+|printSchema|输出Dataframe对应的schema信息|
+|show | 默认最多显示20条记录，但可自定义显示数据数|
+|select| 查询数据|
+|col | 对某列进行操作|
+|as  | 起别名|
+|filter|过滤即条件判断|
+|group by|根据某列分组|
+|count|计数|
+
+scala 版本代码：
+
+```scala
 
 import org.apache.spark.sql.SparkSession
 
@@ -701,10 +1101,11 @@ object DataFrameApp {
 
   def main(args: Array[String]): Unit = {
 
+    //将json文件加载成一个dataframe
     val spark = SparkSession.builder().appName("DataFrameApp").master("local[2]").getOrCreate()
 
     //将json文件加载成一个dataframe
-    val peopleDF = spark.read.format("json").load("file:///home/willhope/sparkdata/people.json")
+    val peopleDF = spark.read.format("json").load("file:///home/willhope/app/data/people.json")
 
     //输出dataframe对应的schema信息
     peopleDF.printSchema()
@@ -734,76 +1135,257 @@ object DataFrameApp {
 
 ```
 
-- DataFrame与RDD之间的相互操作
-
-1. 操作方式一（反射：case class，前提是事先知道字段和字段类型）
+Java 版本代码： 与scala代码有些许不同，主要体现在，scala中+,>,<都是方法，而在Java中，不能直接使用，需要用plus，$greater()，$less()
 
 ```java
 
-import org.apache.spark.sql.SparkSession
+package dataframe;
 
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+
+public class DataFrameJ {
+
+    public static void main(String[] args) {
+
+
+        String inputPath = "/home/willhope/app/data/people.json";
+
+        // 1. SparkSession设置主类，master
+        SparkSession sparkSession = SparkSession.builder().master("local[2]").appName("DataFrameJ").getOrCreate();
+
+        // 2. 读取文件
+        Dataset<Row> peopleDs = sparkSession.read().format("json").load(inputPath);
+
+        // 3. 相关操作
+        //输出dataframe对应的schema信息
+        peopleDs.printSchema();
+
+        //显示记录，括号里面可以填写想要输出的行数
+        peopleDs.show();
+
+        //查询name列的数据：select name from table
+        peopleDs.select("name").show();
+
+        //查询某几列所有数据，并对列进行计算：select name,age + 10 as age2 from table;
+        //注意Java中不能写+10，写成plus()，在scala中+是方法
+        peopleDs.select(peopleDs.col("name"), (peopleDs.col("age").plus(10)).as("age2")).show();
+
+        //过滤年龄大于19岁的人
+        //注意Java中不能写>19，写成$greater()，在scala中>是方法
+        peopleDs.filter(peopleDs.col("age").$greater(19)).show();
+
+        //根据某一列分组，然后再聚合操作select age,count(1) from table group by age
+        peopleDs.groupBy("age").count().show();
+
+        sparkSession.stop();
+
+    }
+
+}
+
+
+```
+
+### 6.2 DataFrame与RDD之间的相互操作
+
+#### 1. 操作方式一——反射
+
+所谓的反射，即事先知道RDD数据的字段和字段类型，然后创建一个相应的类，属性，然后将RDD的数据进行某些相关操作后，将数据赋值给创建的类，形成对象。
+
+scala版本：
+
+```scala
+import org.apache.spark.sql.SparkSession
 /**
- * DataFrameRDD和RDD的相互操作
+ * DataFrame 与 RDD 的互相操作
  */
-object DataFrameRDDApp {
+
+object DataFrameRDDReflection {
+
   def main(args: Array[String]): Unit = {
 
-    val spark = SparkSession.builder().appName("DataFrameApp").master("local[2]").getOrCreate()
+    // 1. 输入地址
+    val inputPath = "file:///home/willhope/app/data/infos.txt"
 
-    //sparkContext可以获取到rdd，textfile可以从hdfs上读取文件，或者从本地获取文件
-    val rdd = spark.sparkContext.textFile("file:///home/willhope/sparkdata/infos.txt")
+    //2. SparkSession设置
+    val sparkSession = SparkSession.builder().master("local[2]").appName("DataFrameRDDReflection").getOrCreate()
 
-    //导入一个隐式转换
-    import spark.implicits._
-    //第一个map将每行记录按照逗号分割。然后第二个map将每行的信息，然后将结果转换成DataFrame，这里需要一个隐式转换
-    val infoDF = rdd.map(_.split(",")).map(line => Info(line(0).toInt,line(1),line(2).toInt)).toDF()
+    //3. RDD ==> DataFrame
+    // 首先通过sparkContext的textFile()读取文件，获得RDD，返回类型为String。
+    // 这里可以理解为将文本内容进行行分割，就像MapReduce的map阶段前，将文本行分割
+    val rdd = sparkSession.sparkContext.textFile(inputPath)
 
-    //显示表中的数据
+    //导入隐式转换，注意这个implicits前面的值是我们设置的SparkSession的名
+    import sparkSession.implicits._
+    //将数据按照分隔符分割，split分割后，返回的是一个String类型数组，然后将数组中的内容取出来，并且转换类型，赋值给定义的类
+    val infoDF = rdd.map(_.split(",")).map(line => Info(line(0).toInt , line(1),line(2).toInt)).toDF()
+
+    /**
+     * infoDF的操作方式一：使用DataFrame的API
+     */
+    //展示
     infoDF.show()
-
-    //显示年龄大于30岁的
+    //过滤
     infoDF.filter(infoDF.col("age") > 30).show()
 
-    //如果对编程不了解，也可以采用sql的方式来解决，创建一张临时的表，然后可以直接使用spark-sql
-    infoDF.createOrReplaceTempView("infos")
-    spark.sql("select * from infos where age>30").show()
+    /**
+     * infoDF的操作方式二：使用SparkSql的API
+     * 如果对编程不了解，也可以采用sql的方式来解决，创建一张临时的表，然后可以直接使用spark-sql
+     */
+    //注册一张临时的表，可以理解为视图，可以方便使用sql语句来进行操作
+    infoDF.createOrReplaceGlobalTempView("infos")
+    sparkSession.sql("select * from infos where age > 30").show()
 
-    spark.stop()
+    //4. SparkSession停止
+    sparkSession.stop()
+
   }
+  case class Info(id:Int , name:String , age:Int)
 
-  //定义schema
-  case class Info(id : Int , name : String , age : Int)
+}
+
+
+```
+
+java版本：
+
+
+```java
+package dataframe;
+
+public class Person{
+
+    Integer id;
+
+    String name;
+
+    Integer age;
+
+    public Person() {
+        this.id = 0;
+        this.name = "";
+        this.age = 0;
+    }
+
+    public Person(Integer id, String name, Integer age) {
+        this.id = id;
+        this.name = name;
+        this.age = age;
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public Integer getAge() {
+        return age;
+    }
+
+    public void setAge(Integer age) {
+        this.age = age;
+    }
+}
+
+package dataframe;
+
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+
+public class DataFrameRDDReflection {
+
+
+    public static void main(String[] args) {
+
+         //1. 设置文件路径
+        String inputPath = "file:///home/willhope/app/data/infos.txt";
+
+        //2. 设置SparkSession，master
+        SparkSession sparkSession = SparkSession.builder().master("local[2]").appName("DataFrameRDDReflection").getOrCreate();
+
+        //3. 读取文件，生成RDD
+        JavaRDD<String> javaRDD = sparkSession.sparkContext().textFile(inputPath,1).toJavaRDD();
+
+        //4. 处理RDD，获取各个字段，并将其返回成对象RDD
+        JavaRDD<Person> personJavaRDD = javaRDD.map(line -> {
+            String[] infos = line.split(",");
+            Integer id = Integer.parseInt(infos[0]);
+            String name  = infos[1];
+            Integer age = Integer.parseInt(infos[2]);
+            return new Person(id ,name, age);
+        });
+
+        //5. 将RDD转换为Dataframe
+        Dataset<Row> personDF = sparkSession.createDataFrame(personJavaRDD,Person.class);
+
+        //6. Dataframe操作
+        personDF.show();
+        personDF.printSchema();
+        personDF.filter(personDF.col("age").$greater(20)).show();
+
+        //创建临时表，进行sql操作
+//        personDF.createOrReplaceGlobalTempView("t_person");
+//        sparkSession.sql("select * from t_person order by age desc").show();
+
+        //关闭资源
+        sparkSession.stop();
+    }
 
 }
 
 ```
 
-2. 操作方式二（Row方式，事先不知道列的情况下，优先考虑第一种）
+#### 2. 操作方式二——编程方式
 
-```java
+编程方式，事先不知道列的情况下使用此方法。但是，通常优先考虑反射方法
 
-import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
+scala版本：
+
+```scala
+
+package org.example.dataframe
+
 import org.apache.spark.sql.{Row, SparkSession}
+import org.apache.spark.sql.types.{IntegerType, StringType, StructField, StructType}
 
-/**
- * DataFrameRDD和RDD的相互操作
- */
-object DataFrameRDDApp {
+object DataFrameRDDProgram {
 
   def main(args: Array[String]): Unit = {
 
-    val spark = SparkSession.builder().appName("DataFrameApp").master("local[2]").getOrCreate()
+    //1. 设置文件路径
+    val inputPath = "file:///home/willhope/app/data/infos.txt"
 
- //sparkContext可以获取到rdd，textfile可以从hdfs上读取文件，或者从本地获取文件
-    val rdd = spark.sparkContext.textFile("file:///home/willhope/sparkdata/infos.txt")
+    //2. 设置SparkSession，master
+    val spark = SparkSession.builder().appName("DataFrameRDDProgram").master("local[2]").getOrCreate()
 
+    //3. sparkContext可以获取到rdd，textfile可以从hdfs上读取文件，或者从本地获取文件
+    val rdd = spark.sparkContext.textFile(inputPath)
+
+    //4. 处理文件内容，不需要像反射方法中定义类，使用Row接收数据即可
     val infoRDD = rdd.map(_.split(",")).map(line => Row(line(0).toInt, line(1), line(2).toInt))
 
+    //5. 设置structType，设置Row数据的结构，第三个参数表示能否为空
     val structType = StructType(Array(StructField("id",IntegerType,true),
       StructField("name",StringType,true),
       StructField("age",IntegerType,true)
     ))
 
+    //6. 将rdd转换为Dataframe
     val infoDF = spark.createDataFrame(infoRDD,structType)
     infoDF.printSchema()
     infoDF.show()
@@ -811,16 +1393,91 @@ object DataFrameRDDApp {
     infoDF.filter(infoDF.col("age") > 30).show()
 
     //如果对编程不了解，也可以采用sql的方式来解决，创建一张临时的表，然后可以直接使用spark-sql
-    infoDF.createOrReplaceTempView("infos")
-    spark.sql("select * from infos where age>30").show()
+//    infoDF.createOrReplaceTempView("infos")
+//    spark.sql("select * from infos where age>30").show()
     spark.stop()
   }
+
 }
+
 ```
 
-- DataFrame的其他主要操作
+java版本：
 
 ```java
+
+package dataframe;
+
+import org.apache.spark.api.java.JavaRDD;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.types.DataTypes;
+import org.apache.spark.sql.types.StructField;
+import org.apache.spark.sql.types.StructType;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class DataFrameRDDProgram {
+
+  public static void main(String[] args) {
+      String inputPath = "file:///home/willhope/app/data/infos.txt";
+
+      //2. 设置SparkSession，master
+      SparkSession sparkSession = SparkSession.builder().master("local[2]").appName("DataFrameRDDProgram").getOrCreate();
+
+      //3. 读取文件，生成RDD
+      JavaRDD<String> javaRDD = sparkSession.sparkContext().textFile(inputPath,1).toJavaRDD();
+
+      //4. 处理原始数据RDD，生成新的RDD
+      JavaRDD<Row> rowJavaRDD = javaRDD.map(
+              line -> {
+                  String[] infos = line.split(",");
+                  Integer id = Integer.parseInt(infos[0]);
+                  String name = infos[1];
+                  Integer age = Integer.parseInt(infos[2]);
+                  Row row = RowFactory.create(id, name, age);
+                  return row;
+              }
+      );
+
+      //5. 创建自定义数据类型
+      List<StructField> fields = new ArrayList<>();
+      StructField field_id = DataTypes.createStructField("id",DataTypes.IntegerType,true);
+      StructField field_name = DataTypes.createStructField("name", DataTypes.StringType, true);
+      StructField field_age = DataTypes.createStructField("age", DataTypes.IntegerType, true);
+      fields.add(field_id);
+      fields.add(field_name);
+      fields.add(field_age);
+      //6. 将自定义的数据类型StructType化，生成schema
+      StructType schema = DataTypes.createStructType(fields);
+
+      //7. 把RDD和schema关联起来并查询
+      Dataset<Row> personDataFrame = sparkSession.createDataFrame(rowJavaRDD, schema);
+      personDataFrame.printSchema();
+      personDataFrame.show();
+      personDataFrame.filter(personDataFrame.col("age").$greater(20)).show();
+
+      //创建临时表，进行sql操作
+//        personDF.createOrReplaceGlobalTempView("t_person");
+//        sparkSession.sql("select * from t_person order by age desc").show();
+
+      //关闭资源
+      sparkSession.stop();
+
+  }
+
+}
+
+```
+
+#### 3. DataFrame的其他主要操作
+
+scala版本：
+
+```scala
 
 import org.apache.spark.sql.{Row, SparkSession}
 
@@ -897,7 +1554,7 @@ object DataFrameCase {
 
 ```
 
-上面的代码每次在IDEA中执行时，都会非常慢，因此，我们转换到spark-shell上面运行，会比较快一些。
+` 上面的代码每次在IDEA中执行时，都会非常慢，因此，我们转换到spark-shell上面运行，会比较快一些。`
 
 在Spark的bin目录下，执行
 
@@ -905,7 +1562,7 @@ object DataFrameCase {
 
 ./spark-shell --master local[2]
 
-val rdd = spark.sparkContext.textFile("file:///home/willhope/sparkdata/student.data")
+val rdd = spark.sparkContext.textFile("file:///home/willhope/app/data/student.data")
 
 case class Student(id : Int , name : String , phone : String , email : String)
 
@@ -962,52 +1619,94 @@ studentDF.take(10).foreach(println)
 
 ```
 
-- DataSet的操作
+## 七、DataSet API操作初识
 
-```java
+1.6版本出现的，强类型，支持Lambda表达式，Dataframe能用的，DataSet大部分都能用，目前支持Java和Scala。DataSet需要用Dataframe使用as来转换。
+
+使用DataSet处理csv文件。
+
+scala版本：
+
+```scala
+
+package org.example.dataframe
 
 import org.apache.spark.sql.SparkSession
 
-/**
- * Dataset的操作
- */
 object DatasetApp {
-
   def main(args: Array[String]): Unit = {
 
     val spark = SparkSession.builder().appName("DatasetApp").master("local[2]").getOrCreate()
 
     //注意需要导入隐式转换
     import spark.implicits._
+    //设置文件路径
+    val path = "file:///home/willhope/app/data/sales.csv"
 
-    val path = "file:///home/willhope/sparkdata/sales.csv"
-
-    //spark解析csv文件，显然dataframe拿到，然后在转为dataset
+    //spark解析csv文件，此功能属于外部数据源方法，先用dataframe处理，然后在转为dataset
+    //第一个option()方法，传入header，表示csv文件中第一行是属性，要获取到这些属性
+    //第二个option()方法，传入inferSchema，表示自动推导csv中各个属性结构
+    //返回的是Dataframe类型
     val df = spark.read.option("header","true").option("inferSchema","true").csv(path)
     df.show()
 
-    //df转换为ds
+    //df转换为ds，as后面设置一个类型，这个类型就是自定义的类，用来接受csv中的属性
     val ds = df.as[Sales]
+    //仅仅取出id
     ds.map(line=>line.itemId).show()
 
     spark.stop()
   }
 
+  //此类的数据定义就是csv上面的header属性
   case class Sales(transactionId:Int,customerId:Int,itemId:Int,amountPaid:Double)
 
 }
 
 ```
 
-- SQL、DataFrame和DataSet静态类型和运行时类型安全，即某个字段写错了
+java版本：这段代码里面有个坑，需要重新定义一个类来定义csv文件中的属性和数据类型，这里面有`遗留问题。`
 
-SQL: seletc name from person;  compile  ok, result no
 
-DF:  df.select("name")  compile no      df.select("nname")  compile ok  
+```java
 
-DS:  ds.map(line => line.itemid)  compile no
+package dataframe;
 
-### 七、External data source
+import org.apache.spark.api.java.function.MapFunction;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Encoders;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+
+public class DataSetApp {
+
+    public static void main(String[] args) {
+
+        String path = "file:///home/willhope/app/data/sales.csv";
+
+        SparkSession sparkSession = SparkSession.builder().appName("DataSetApp").master("local[2]").getOrCreate();
+
+        Dataset<Row> dataFrame = sparkSession.read().option("header","true")
+                .option("inferSchema","true")
+                .csv(path);
+        dataFrame.printSchema();
+        dataFrame.show();
+
+        //转换成dataset
+        Dataset<Person> dataset = dataFrame.as(Encoders.bean(Person.class));
+        dataset.map(
+                (MapFunction<Person, String>) (Person p)->p.name,Encoders.STRING()
+        ).show();
+
+        // 关闭资源
+        sparkSession.stop();
+    }
+
+}
+
+```
+
+## 八、External data source
 
 用户角度：
 
@@ -1023,7 +1722,7 @@ DS:  ds.map(line => line.itemid)  compile no
 
   写回：spark.write.format("格式").save(path)
 
-- scala操作parquet文件
+### 8.1 scala操作parquet文件
 
 ```java
 
@@ -1058,7 +1757,7 @@ object ParquetApp {
 
 ```
 
-- sql操作parquet（在spark-sql运行）
+### 8.2 sql操作parquet（在spark-sql运行）
 
 ```s
 # 创建表，并添加数据
@@ -1086,7 +1785,7 @@ SELECT * FROM parquetTable
 
 在执行数据写回时，有一个200，这是spark在shuffle或者join时默认的分区，可以自定义设置：spark.sqlContext.setConf("spark.sql.shuffle.partitions","10"）通过spark.sqlContext.getConf("spark.sql.shuffle.partitions")来获取数量值。
 
-- 外部数据源API操作MySQL
+### 8.3 外部数据源API操作MySQL
 
 在spark-shell中执行
 
@@ -1168,7 +1867,7 @@ OPTIONS (
 )
 ```
 
-- 关联MySQL和Hive表数据
+### 8.4 关联MySQL和Hive表数据
 
 在MYSQL中操作
 
@@ -1223,13 +1922,13 @@ object HiveMySQLApp {
 
 ```
 
-# 实战——使用Spark离线处理慕课网日志
+# 第三部分——[实战]使用Spark SQL离线处理慕课网日志
 
 ## 一、项目梳理
 
 网课日志记录用户行为：用户每次访问网站时所有的行为数据（访问、浏览、搜索、点击...）用户行为轨迹、流量日志，根据这些行为，对用户进行推荐，在后台对用户进行分析，并为用户贴上标签。用户行为日志生成的渠道来自，web服务器（Nginx）或者Ajax。
 
-- 日志数据内容：
+### 1.1 日志数据内容
 
 1）访问的系统属性： 操作系统、浏览器等等
 
@@ -1239,7 +1938,7 @@ object HiveMySQLApp {
 
 例如：2013-05-19 13:00:00     http://www.taobao.com/17/?tracker_u=1624169&type=1      B58W48U4WKZCJ5D1T3Z9ZY88RU7QA7B1        http://hao.360.cn/      1.196.34.243   
 
-- 数据处理流程
+### 1.2 数据处理流程
 
 1）数据采集
 
@@ -1262,9 +1961,9 @@ Flume：web日志写入到HDFS
 通过图形化展示的方式展现出来：饼图、柱状图、地图、折线图  ECharts、HUE、Zeppelin（后两个一般是大数据开发人员使用的）
 
 **离线数据处理架构，本次实战实现的是右侧的流程**
-<div align="center"> <img  src="/pictures/Data-processing-architecture.png"/> </div>
+<div align="center"> <img  src="pictures/Data-processing-architecture.png"/> </div>
 
-- 项目需求
+### 1.3 项目需求
 
 需求一：统计慕课网主站最受欢迎的课程/手记的Top N访问次数
 
@@ -1272,7 +1971,7 @@ Flume：web日志写入到HDFS
 
 需求三：按流量统计慕课网主站最受欢迎的Top N课程
 
-- 慕课网主站日志介绍
+### 1.4 慕课网主站日志介绍
 
 文件有些大，压缩后500MB，解压有5G，GitHub有上传限制，因此无法上传。这里抽取出一万行用来测试。
 
@@ -1280,12 +1979,12 @@ Flume：web日志写入到HDFS
 
 一般的日志处理方式，我们是需要进行分区的，按照日志中的访问时间进行相应的分区，比如：d,h,m5(每5分钟一个分区)数据处理流程，本次项目按照天进行分区
 
-- 日志清洗：
+### 1.5 日志清洗：
 
 输入：访问时间、访问URL、耗费的流量、访问IP地址信息
 输出：URL、cmsType(video/article)、cmsId(编号)、流量、ip、城市信息、访问时间、天
 
-- ip解析包的下载
+### 1.6 ip解析包的下载
 
 使用github上已有的开源项目
 
@@ -1612,7 +2311,7 @@ hdfs://willhope:8020/clean 20170511
 hdfs://hadoop001:8020/imooc/clean 20170511 
 ```
 
-# Spark Streaming
+# 第四部分——Spark Streaming
 
 ## 一、实时流处理的概述
 
