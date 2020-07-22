@@ -1,4 +1,4 @@
-package sparksqlpreliminary;
+package sparksqloperatedata;
 
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Row;

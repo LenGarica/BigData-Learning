@@ -1,4 +1,4 @@
-package sparksqlpreliminary;
+package sparksqloperatedata;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.SparkContext;

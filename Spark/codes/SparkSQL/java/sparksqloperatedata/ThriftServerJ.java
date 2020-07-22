@@ -1,4 +1,4 @@
-package sparksqlpreliminary;
+package sparksqloperatedata;
 
 import java.sql.Connection;
 import java.sql.DriverManager;
