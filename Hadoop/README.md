@@ -2841,7 +2841,7 @@ deptno int
 ```
 
 6. (将数据添加到表中，emp.txt这个文件在任何一个关系型数据库都能找到)
-LOAD DATA LOCAL INPATH '/home/willhope/data/emp.txt' OVERWRITE INTO TABLE emp;
+LOAD DATA LOCAL INPATH '/home/willhope/app/data/emp.txt' OVERWRITE INTO TABLE emp;
 
 7. (查看表的结构)
 desc 表的名称；   只显示表的结构

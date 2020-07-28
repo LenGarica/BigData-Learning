@@ -57,12 +57,17 @@
             - [2. 操作方式二——编程方式](#2-操作方式二编程方式)
             - [3. DataFrame的其他主要操作](#3-dataframe的其他主要操作)
     - [七、DataSet API操作初识](#七dataset-api操作初识)
+        - [7.1 使用DataSet处理csv文件](#71-使用dataset处理csv文件)
     - [八、External data source](#八external-data-source)
-        - [8.1 scala操作parquet文件](#81-scala操作parquet文件)
-        - [8.2 sql操作parquet（在spark-sql运行）](#82-sql操作parquet在spark-sql运行)
-        - [8.3 外部数据源API操作MySQL](#83-外部数据源api操作mysql)
-        - [8.4 关联MySQL和Hive表数据](#84-关联mysql和hive表数据)
-- [第三部分——[实战]使用Spark SQL离线处理慕课网日志](#第三部分实战使用spark-sql离线处理慕课网日志)
+        - [8.1 什么是外部数据源](#81-什么是外部数据源)
+        - [8.2 scala操作parquet文件](#82-scala操作parquet文件)
+        - [8.3 spark-sql操作parquet](#83-spark-sql操作parquet)
+        - [8.4 外部数据源API操作hive表](#84-外部数据源api操作hive表)
+        - [8.5 外部数据源API操作MySQL](#85-外部数据源api操作mysql)
+        - [8.5 Hive和MySQL的综合使用](#85-hive和mysql的综合使用)
+            - [1. 关联MySQL和Hive表数据](#1-关联mysql和hive表数据)
+            - [2. 使用外部数据源综合查询hive和mysql的表数据](#2-使用外部数据源综合查询hive和mysql的表数据)
+- [第三部分——Spark SQL行为日志处理实战](#第三部分spark-sql行为日志处理实战)
     - [一、项目梳理](#一项目梳理)
         - [1.1 日志数据内容](#11-日志数据内容)
         - [1.2 数据处理流程](#12-数据处理流程)
@@ -78,13 +83,11 @@
     - [五、Spark Streaming集成Kafka](#五spark-streaming集成kafka)
     - [六、Spark Streaming集成Kafka和Flume](#六spark-streaming集成kafka和flume)
 
+` 注意： `
+
 本项目分为Java版本和Scala版本。在学习的时候使用Scala，因为企业生产中都是使用Java来编写的，因此之后用Java进行重构。
 
-本项目中Spark SQL和Spark Streaming目录下都会有一个Spark._初识和一个Spark._实战，前者是学习理论进行的日常测试，后者是学习整体后，进行的实战项目。
-
-**项目中所有用到的数据都在data目录下，可自行下载，注意在执行程序时，记得修改路径**
-
-这些数据，在spark目录下spark-2.4.4-bin-2.6.0-cdh5.15.1/examples/src/main/resources中也可找到
+本项目中所使用的处理文件，都在data目录中，注意在执行程序时，记得修改路径。所有的代码，都在各自标题对应的英文文件夹中。
 
 # 第一部分——Spark及生态圈概述
 
@@ -1251,6 +1254,7 @@ object DataFrameRDDReflection {
 
 java版本：
 
+首先需要定义一个person类
 
 ```java
 package dataframe;
@@ -1299,7 +1303,11 @@ public class Person{
         this.age = age;
     }
 }
+```
 
+其次，进行相应的处理
+
+```java
 package dataframe;
 
 import org.apache.spark.api.java.JavaRDD;
@@ -1475,7 +1483,7 @@ public class DataFrameRDDProgram {
 
 #### 3. DataFrame的其他主要操作
 
-scala版本：
+scala版本：这段代码就不放入文件夹中了，跟第一节代码没多大区别。看一下即可
 
 ```scala
 
@@ -1623,7 +1631,7 @@ studentDF.take(10).foreach(println)
 
 1.6版本出现的，强类型，支持Lambda表达式，Dataframe能用的，DataSet大部分都能用，目前支持Java和Scala。DataSet需要用Dataframe使用as来转换。
 
-使用DataSet处理csv文件。
+### 7.1 使用DataSet处理csv文件
 
 scala版本：
 
@@ -1665,37 +1673,101 @@ object DatasetApp {
 
 ```
 
-java版本：这段代码里面有个坑，需要重新定义一个类来定义csv文件中的属性和数据类型，这里面有`遗留问题。`
+java版本：
 
+首先，我们需要看下所给文件的属性都有哪些，通过RDD自动推断文件的schema，按照schema所显示的属性和数据类型，编写相对应的类，在类中将文件属性定义好。这里定义一个Sales类。
 
 ```java
-
 package dataframe;
 
+public class Sales {
+
+    int transactionId;
+    int customerId;
+    int itemId;
+    double amountPaid;
+
+    public Sales(){
+        this.transactionId = 0;
+        this.customerId = 0;
+        this.itemId = 0;
+        this.amountPaid = 0.0;
+    }
+
+    public Sales(int transactionId, int customerId, int itemId, double amountPaid) {
+        this.transactionId = transactionId;
+        this.customerId = customerId;
+        this.itemId = itemId;
+        this.amountPaid = amountPaid;
+    }
+
+    public int getTransactionId() {
+        return transactionId;
+    }
+
+    public void setTransactionId(int transactionId) {
+        this.transactionId = transactionId;
+    }
+
+    public int getCustomerId() {
+        return customerId;
+    }
+
+    public void setCustomerId(int customerId) {
+        this.customerId = customerId;
+    }
+
+    public int getItemId() {
+        return itemId;
+    }
+
+    public void setItemId(int itemId) {
+        this.itemId = itemId;
+    }
+
+    public double getAmountPaid() {
+        return amountPaid;
+    }
+
+    public void setAmountPaid(double amountPaid) {
+        this.amountPaid = amountPaid;
+    }
+}
+
+
+```
+
+其次，我们将文件进行解析。
+
+```java
 import org.apache.spark.api.java.function.MapFunction;
 import org.apache.spark.sql.Dataset;
 import org.apache.spark.sql.Encoders;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SparkSession;
 
-public class DataSetApp {
+public class DataSetApp2 {
 
     public static void main(String[] args) {
 
+        //设置文件路径
         String path = "file:///home/willhope/app/data/sales.csv";
 
-        SparkSession sparkSession = SparkSession.builder().appName("DataSetApp").master("local[2]").getOrCreate();
+        //设置SparkSession
+        SparkSession sparkSession = SparkSession.builder().appName("DataSetApp2").master("local[2]").getOrCreate();
 
+        //读取文件，获得RDD
         Dataset<Row> dataFrame = sparkSession.read().option("header","true")
                 .option("inferSchema","true")
                 .csv(path);
+        //通过这个方法，我们可以得出文件具体属性和类型，有了此方法，我们能够很快的定义一个相应的类
         dataFrame.printSchema();
         dataFrame.show();
 
         //转换成dataset
-        Dataset<Person> dataset = dataFrame.as(Encoders.bean(Person.class));
+        Dataset<Sales> dataset = dataFrame.as(Encoders.bean(Sales.class));
         dataset.map(
-                (MapFunction<Person, String>) (Person p)->p.name,Encoders.STRING()
+                (MapFunction<Sales, Integer>) (Sales s)->s.transactionId,Encoders.INT()
         ).show();
 
         // 关闭资源
@@ -1708,74 +1780,124 @@ public class DataSetApp {
 
 ## 八、External data source
 
+### 8.1 什么是外部数据源
+
 用户角度：
 
-	方便快速从不同的数据源（json、parquet、rdbms），经过混合处理（json join parquet）
-
-	再将处理结果以特定的格式（json、parquet）写回到指定的系统（HDFS、S3）上去
+	需要方便快速从不同的数据源（json、parquet、rdbms等），经过混合处理（json join parquet等），	再将处理结果以特定的格式（json、parquet）写回到指定的系统（HDFS、S3）上去
 
 外部数据源：
 
-  Spark SQL 1.2 ==> 外部数据源API，使spark可以快速访问各种外部数据源
+  自Spark SQL 1.2 开始引入外部数据源API，使spark可以快速访问各种外部数据源，从而进行读写。
 
   读取：spark.read.format("格式").load(path)
 
   写回：spark.write.format("格式").save(path)
 
-### 8.1 scala操作parquet文件
+### 8.2 scala操作parquet文件
 
-```java
+scala版本
 
+```scala
 import org.apache.spark.sql.SparkSession
 
-/**
- * parquet文件操作
- */
-
 object ParquetApp {
+
   def main(args: Array[String]): Unit = {
 
+    //1. 设置文件路径
+    val inputPath = "file:///home/willhope/app/data/users.parquet"
+    val outputPath = "file:///home/willhope/app/data/userjsonout"
+
+    //2. 设置SparkSession，master
     val spark = SparkSession.builder().appName("ParquetApp").master("local[2]").getOrCreate()
 
-    //标准写法，可以使用spark.read.load(路径)，但是此方法只适用于parquet文件
-    val userDF = spark.read.format("parquet").load("file:///home/willhope/sparkdata/users.parquet")
-    //上面这句也可以更改为
-    //spark.read.format("parquet").option("path","file:///home/willhope/sparkdata/users.parquet").load().show()
-
+    //3. 读取文件，设置文件的格式，获取Dataframe，处理parquet文件时，可以不指定format，因为spark默认处理parquet
+    val userDF = spark.read.format("parquet").load(inputPath)
     userDF.printSchema()
     userDF.show()
 
-    //将查询结果写回
-    userDF.select("name","favorite_color").write.format("json").save("file:///home/willhope/app/tmp/jsonout")
 
+    //4. 上面三句可以更改为下面一句
+//    spark.read.format("parquet").option("path",inputPath).load().show()
 
+    //5. 显示自己需要的两列
+    userDF.select("name","favorite_color").show()
 
-    spark.stop()
+    //6. 将显示的两列写出到json文件中
+    userDF.select("name","favorite_color").write.format("json").save(outputPath)
+
+    // 关闭SparkSession
+    spark.close()
 
   }
+
 }
 
 ```
 
-### 8.2 sql操作parquet（在spark-sql运行）
+java版本：
+
+```java
+package exdatasource;
+
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SparkSession;
+
+public class ParquetApp {
+
+
+    public static void main(String[] args) {
+
+        //1. 设置路径
+        String inputPath = "file:///home/willhope/app/data/users.parquet";
+        String outputPath = "file:///home/willhope/app/data/userjsonout";
+
+        //2. 获取SparkSession
+        SparkSession sparkSession = SparkSession.builder().master("local[2]").appName("ParquetApp").getOrCreate();
+
+        //3. 相关处理
+        Dataset<Row> users = sparkSession.read().parquet(inputPath);
+        users.printSchema();
+        users.show();
+        users.select("name", "favorite_color").show();
+
+        //4. 导出数据为json格式
+        users.select("name", "favorite_color").write().json(outputPath);
+
+        // 关闭资源
+        sparkSession.stop();
+    }
+}
+
+```
+
+### 8.3 spark-sql操作parquet
 
 ```s
 # 创建表，并添加数据
 CREATE TEMPORARY VIEW parquetTable
 USING org.apache.spark.sql.parquet
 OPTIONS (
-  path "/home/willhope/sparkdata/users.parquet"
-)
+  localpath "/home/willhope/app/spark-2.4.4-bin-2.6.0-cdh5.15.1/examples/src/main/resources/users.parquet"
+);
 
 # 查询
 SELECT * FROM parquetTable
 ```
 
-- 外部数据源API操作hive表
+### 8.4 外部数据源API操作hive表
 
 打开spark-shell，在bin目录下./spark-shell --master local[2]
 
-查看hive表有哪些数据 : spark.sql("show tables").show
+查看hive表有哪些数据库 : spark.sql("show databases").show 
+
+选择数据库:spark.sql("use test_db")
+
+查看当前数据库中有哪些表有数据 : spark.sql("show tables").show //这个默认查看default数据库中的表
+
+重新选择数据库:spark.sql("use default")
 
 读取表的数据：spark.table("track_info_province_stat").show
 
@@ -1785,18 +1907,22 @@ SELECT * FROM parquetTable
 
 在执行数据写回时，有一个200，这是spark在shuffle或者join时默认的分区，可以自定义设置：spark.sqlContext.setConf("spark.sql.shuffle.partitions","10"）通过spark.sqlContext.getConf("spark.sql.shuffle.partitions")来获取数量值。
 
-### 8.3 外部数据源API操作MySQL
+### 8.5 外部数据源API操作MySQL
 
 在spark-shell中执行
 
-```s
+```scala
 
 val jdbcDF = spark.read.format("jdbc").option("url", "jdbc:mysql://localhost:3306/hadoop_hive").option("dbtable", "hadoop_hive.TBLS").option("user", "root").option("password", "123456").option("driver", "com.mysql.jdbc.Driver").load()
 
-# 显示schema
+//显示schema
 jdbcDF.printSchema
 
-# 结果
+```
+
+结果展示：
+
+```
 
 root
  |-- TBL_ID: long (nullable = true)
@@ -1840,22 +1966,57 @@ jdbcDF.select("TBL_ID","TBL_NAME").show
 
 ```
 
-也可以使用下面这种编码
+也可以在IDEA中使用下面这种编码
 
-```java
-import java.util.Properties
-val connectionProperties = new Properties()
-connectionProperties.put("user", "root")
-connectionProperties.put("password", "123456")
-connectionProperties.put("driver", "com.mysql.jdbc.Driver")
+```scala
+package org.example.exdatasource
 
-val jdbcDF2 = spark.read.jdbc("jdbc:mysql://localhost:3306", "hadoop_hive.TBLS", connectionProperties)
+import org.apache.spark.sql.SparkSession
+
+object JDBCMySQL {
+
+  val spark = SparkSession.builder().appName("JDBCMySQL").master("local[2]").getOrCreate()
+
+  val jdbcDF = spark.read.format("jdbc").option("url", "jdbc:mysql://localhost:3306/hadoop_hive").option("dbtable", "hadoop_hive.TBLS").option("user", "root").option("password", "123456").option("driver", "com.mysql.jdbc.Driver").load()
+
+  jdbcDF.printSchema
+
+  jdbcDF.show
+
+  jdbcDF.select("TBL_ID","TBL_NAME").show
+
+
+}
 
 ```
 
-也可以使用spark-sql执行
+或者这种编码：
 
-```s
+```scala
+package org.example.exdatasource
+
+import java.util.Properties
+
+import org.apache.spark.sql.SparkSession
+
+object JDBCMySQL2 {
+
+  val connectionProperties = new Properties()
+  connectionProperties.put("user", "root")
+  connectionProperties.put("password", "123456")
+  connectionProperties.put("driver", "com.mysql.jdbc.Driver")
+
+  val spark = SparkSession.builder().appName("JDBCMySQL").master("local[2]").getOrCreate()
+
+  val jdbcDF2 = spark.read.jdbc("jdbc:mysql://localhost:3306", "hadoop_hive.TBLS", connectionProperties)
+
+}
+
+```
+
+也可以使用spark-sql执行，创建一张临时视图，对视图进行sql操作。
+
+```sql
 CREATE TEMPORARY VIEW jdbcTable
 USING org.apache.spark.sql.jdbc
 OPTIONS (
@@ -1864,14 +2025,21 @@ OPTIONS (
   user 'root',
   password '123456',
   driver 'com.mysql.jdbc.Driver'
-)
+);
 ```
 
-### 8.4 关联MySQL和Hive表数据
+查看表中内容，show tables;
 
-在MYSQL中操作
+查询jdbcTable，select * from jdbcTable;
 
-```s
+### 8.5 Hive和MySQL的综合使用
+
+
+#### 1. 关联MySQL和Hive表数据
+
++ 在MySQL中操作
+
+```sql
 create database spark;
 
 use spark;
@@ -1886,11 +2054,15 @@ INSERT INTO DEPT VALUES(20,'RESEARCH','DALLAS');
 INSERT INTO DEPT VALUES(30,'SALES','CHICAGO');
 INSERT INTO DEPT VALUES(40,'OPERATIONS','BOSTON');
 
+select * from DEPT;
 ```
++ 在Hive中创建一个emp表，这个表之前创建过，这里省略。
 
-使用外部数据源综合查询hive和mysql的表数据
+我们需要关联MySQL中DEPT表的deptno和emp表中的deptno。
 
-```java
+#### 2. 使用外部数据源综合查询hive和mysql的表数据
+
+```scala
 
 import org.apache.spark.sql.SparkSession
 
@@ -1922,21 +2094,26 @@ object HiveMySQLApp {
 
 ```
 
-# 第三部分——[实战]使用Spark SQL离线处理慕课网日志
-
+# 第三部分——Spark SQL行为日志处理实战
 ## 一、项目梳理
 
-网课日志记录用户行为：用户每次访问网站时所有的行为数据（访问、浏览、搜索、点击...）用户行为轨迹、流量日志，根据这些行为，对用户进行推荐，在后台对用户进行分析，并为用户贴上标签。用户行为日志生成的渠道来自，web服务器（Nginx）或者Ajax。
+日志记录用户行为：用户每次访问网站时所有的行为数据（访问、浏览、搜索、点击...）用户行为轨迹、流量日志，根据这些行为，对用户进行推荐，在后台对用户进行分析，并为用户贴上标签。用户行为日志生成的渠道来自，web服务器。
 
 ### 1.1 日志数据内容
 
+` 本次实战项目，原始数据压缩后有500MB，github无法上传这么大的数据。这里提供一份数据access.log，存放于Data文件夹中，或者使用从原始数据中抽取的10000条数据，生成一个新的文件10000_access.log ，此文件只有2.7MB`。
+
+一般的日志处理方式，我们是需要进行分区的，按照日志中的访问时间进行相应的分区，比如：d,h,m5(每5分钟一个分区)数据处理流程，本次项目按照天进行分区。日志内容一般包括下面几点：
+
 1）访问的系统属性： 操作系统、浏览器等等
 
-2）访问特征：点击的url、从哪个url跳转过来的(referer)、页面上的停留时间等
+2）访问特征：访问时间、点击的url、从哪个url跳转过来的(referer)、页面上的停留时间，访问过程耗费流量等
 
-3）访问信息：session_id、访问ip(访问城市)，访问时间和区域
+3）访问信息：session_id，访问ip(访问城市)，访问时间和区域
 
 例如：2013-05-19 13:00:00     http://www.taobao.com/17/?tracker_u=1624169&type=1      B58W48U4WKZCJ5D1T3Z9ZY88RU7QA7B1        http://hao.360.cn/      1.196.34.243   
+
+本项目日志示例：183.162.52.7 - - [10/Nov/2016:00:01:02 +0800] "POST /api3/getadv HTTP/1.1" 200 813 "www.imooc.com" "-" cid=0&timestamp=1478707261865&uid=2871142&marking=androidbanner&secrect=a6e8e14701ffe9f6063934780d9e2e6d&token=f51e97d1cb1a9caac669ea8acc162b96 "mukewang/5.0.0 (Android 5.1.1; Xiaomi Redmi 3 Build/LMY47V),Network 2G/3G" "-" 10.100.134.244:80 200 0.027 0.027
 
 ### 1.2 数据处理流程
 
@@ -1960,7 +2137,7 @@ Flume：web日志写入到HDFS
 
 通过图形化展示的方式展现出来：饼图、柱状图、地图、折线图  ECharts、HUE、Zeppelin（后两个一般是大数据开发人员使用的）
 
-**离线数据处理架构，本次实战实现的是右侧的流程**
+**离线数据处理架构**
 <div align="center"> <img  src="pictures/Data-processing-architecture.png"/> </div>
 
 ### 1.3 项目需求
@@ -1971,32 +2148,131 @@ Flume：web日志写入到HDFS
 
 需求三：按流量统计慕课网主站最受欢迎的Top N课程
 
-### 1.4 慕课网主站日志介绍
 
-文件有些大，压缩后500MB，解压有5G，GitHub有上传限制，因此无法上传。这里抽取出一万行用来测试。
+## 二、项目实战
 
-对日志执行 head -10000 access.20161111.log >> 10000_access.log，抽取后的文件只有2.6MB，或者使用access.log文件。
+### 2.1 日志清洗案例
 
-一般的日志处理方式，我们是需要进行分区的，按照日志中的访问时间进行相应的分区，比如：d,h,m5(每5分钟一个分区)数据处理流程，本次项目按照天进行分区
+这里使用的是从原文件抽取的日志，10000_access.log。
 
-### 1.5 日志清洗：
+我们所需要的字段：访问时间、访问URL、耗费的流量、访问IP地址信息
+我们所需要输出的，即进行处理后输出的内容：URL、cmsType(video/article)、cmsId(编号)、流量、ip、城市信息、访问时间、天
 
-输入：访问时间、访问URL、耗费的流量、访问IP地址信息
-输出：URL、cmsType(video/article)、cmsId(编号)、流量、ip、城市信息、访问时间、天
+数据清洗的代码，scala版本：
 
-### 1.6 ip解析包的下载
+首先，我们需要对日志中的所需要的字段进行提取，其次，由于日志中的时间格式非常乱，需要一个日志处理类。日期处理类如下：
+
+```scala
+package org.example.project.etl
+
+import java.util.{Date, Locale}
+
+import org.apache.commons.lang3.time.FastDateFormat
+
+/**
+ * 日期时间解析工具类:
+ * 注意：SimpleDateFormat是线程不安全
+ */
+object DateUtils {
+
+  //输入文件日期时间格式
+  //10/Nov/2016:00:01:02 +0800
+  val YYYYMMDDHHMM_TIME_FORMAT = FastDateFormat.getInstance("dd/MMM/yyyy:HH:mm:ss Z", Locale.ENGLISH)
+
+  //目标日期格式
+  val TARGET_FORMAT = FastDateFormat.getInstance("yyyy-MM-dd HH:mm:ss")
+
+
+  /**
+   * 获取时间：yyyy-MM-dd HH:mm:ss
+   */
+  def parse(time: String) = {
+    TARGET_FORMAT.format(new Date(getTime(time)))
+  }
+
+  /**
+   * 获取输入日志时间：long类型
+   *
+   * time: [10/Nov/2016:00:01:02 +0800]
+   */
+  def getTime(time: String) = {
+    try {
+      YYYYMMDDHHMM_TIME_FORMAT.parse(time.substring(time.indexOf("[") + 1,
+        time.lastIndexOf("]"))).getTime
+    } catch {
+      case e: Exception => {
+        0l
+      }
+    }
+  }
+
+  def main(args: Array[String]) {
+    println(parse("[10/Nov/2016:00:01:02 +0800]"))
+  }
+
+}
+
+
+```
+
+日志处理类：
+
+```scala
+package org.example.project.etl
+
+import org.apache.spark.sql.SparkSession
+
+/**
+ * 第一步清洗：抽取出我们所需要的指定列的数据
+ */
+object SparkStatFormatJob {
+
+  def main(args: Array[String]) {
+
+    val spark = SparkSession.builder().appName("SparkStatFormatJob")
+      .master("local[2]").getOrCreate()
+
+    val acccess = spark.sparkContext.textFile("file:///home/willhope/app/data/10000_access.log")
+
+    //acccess.take(10).foreach(println)
+
+    acccess.map(line => {
+      val splits = line.split(" ")
+      val ip = splits(0)
+
+      /**
+       * 原始日志的第三个和第四个字段拼接起来就是完整的访问时间：
+       * [10/Nov/2016:00:01:02 +0800] ==> yyyy-MM-dd HH:mm:ss
+       */
+      val time = splits(3) + " " + splits(4)
+      val url = splits(11).replaceAll("\"","")
+      val traffic = splits(9)
+      //      (ip, DateUtils.parse(time), url, traffic)
+      DateUtils.parse(time) + "\t" + url + "\t" + traffic + "\t" + ip
+    }).saveAsTextFile("file:///home/willhope/app/data/output/")
+
+    spark.stop()
+  }
+
+}
+
+```
+
+` 我们上面处理好的数据量有些小，这里，我们将使用一个现成的处理好的数据文件access.log，这个文件比较大，存放在BigData-Learning/Spark/data/access.log。将处理好的日志中的url，再次进行解析，我们需要一个ip解析包，解析日志中的ip，分析出地市信息。`
+
+
+### 2.2 ip解析包的下载
 
 使用github上已有的开源项目
 
-1）git clone https://github.com/wzhe06/ipdatabase.git
+1. git clone https://github.com/wzhe06/ipdatabase.git
 
-2）编译下载的项目：mvn clean package -DskipTests 会出现一个target目录，里面有一个jar包
+2. 编译下载的项目：mvn clean package -DskipTests 会出现一个target目录，里面有一个jar包。如果出现pom.xml中log4j有错误，将版本改为1.2.17，然后重新编译。也可以使用现成的jar包，已经放在项目中了。
 
-3）安装jar包到自己的maven仓库
+3. 安装jar包到自己的maven仓库
+mvn install:install-file -Dfile=/home/willhope/Documents/dev/ipdatabase/target/ipdatabase-1.0-SNAPSHOT.jar -DgroupId=com.ggstar -DartifactId=ipdatabase -Dversion=1.0 -Dpackaging=jar
 
-mvn install:install-file -Dfile=/home/willhope/sparkdata/ipdatabase/target/ipdatabase-1.0-SNAPSHOT.jar -DgroupId=com.ggstar -DartifactId=ipdatabase -Dversion=1.0 -Dpackaging=jar
-
-4）在IDEA中使用，在项目的pom.xml中进行引用
+4. 在IDEA中使用，在项目的pom.xml中进行引用
 
 ```xml
 
@@ -2025,10 +2301,137 @@ mvn install:install-file -Dfile=/home/willhope/sparkdata/ipdatabase/target/ipdat
     </dependency>
 
 ```
+5. 将开源ipdatabase项目中，resources目录下的三个相关文件，添加到工程目录的resources文件夹下。
 
-[项目地址](https://github.com/Zhang-Yixuan/SparkProject/tree/master/SparkSQL/Actual-Project/SparkEcomLogAnalysis/spark-project)
+### 2.3 数据清洗以及地市信息的处理
 
-[Echarts可视化](https://github.com/Zhang-Yixuan/SparkProject/tree/master/SparkSQL/Actual-Project/SparkEcomLogAnalysis/web)
+1. 首先，我们需要创建一个ip解析类IpUtils，使用这个开源的项目，将ip进行解析
+
+```scala
+import com.ggstar.util.ip.IpHelper
+
+/**
+ * IP解析工具类
+ */
+object IpUtils {
+
+  def getCity(ip:String)={
+    IpHelper.findRegionByIp(ip)
+  }
+
+  //测试是否能输出北京市
+//  def main(args: Array[String]): Unit = {
+//    println(getCity("58.30.15.255"))
+//  }
+}
+```
+2. 其次，我们要自定义需要输出的字段以及相对应的数据类型，定义一个AccessConvertUtil。
+
+```scala
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types.{LongType, StringType, StructField, StructType}
+
+/**
+ * 访问日志转换(输入==>输出)工具类
+ */
+object AccessConvertUtil {
+
+  //定义的输出的字段
+  val struct = StructType(
+    Array(
+      StructField("url",StringType),
+      StructField("cmsType",StringType),
+      StructField("cmsId",LongType),
+      StructField("traffic",LongType),
+      StructField("ip",StringType),
+      StructField("city",StringType),
+      StructField("time",StringType),
+      StructField("day",StringType)
+    )
+  )
+
+  /**
+   * 根据输入的每一行信息转换成输出的样式
+   * @param log  输入的每一行记录信息
+   */
+  def parseLog(log:String) = {
+
+    try{
+      val splits = log.split("\t")
+
+      val url = splits(1)
+      val traffic = splits(2).toLong
+      val ip = splits(3)
+
+      val domain = "http://www.imooc.com/"
+      val cms = url.substring(url.indexOf(domain) + domain.length)
+      val cmsTypeId = cms.split("/")
+
+      var cmsType = ""
+      var cmsId = 0l
+      if(cmsTypeId.length > 1) {
+        cmsType = cmsTypeId(0)
+        cmsId = cmsTypeId(1).toLong
+      }
+
+      val city = IpUtils.getCity(ip)
+      val time = splits(0)
+      val day = time.substring(0,10).replaceAll("-","")
+
+      //这个row里面的字段要和struct中的字段对应上
+      Row(url, cmsType, cmsId, traffic, ip, city, time, day)
+    } catch {
+      case e:Exception => Row(0)
+    }
+  }
+}
+
+
+```
+
+3. 定义一个我们的Driver类SparkStatCleanJob，将数据进行处理后，保存到本地
+
+```scala
+
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
+object SparkStatCleanJob {
+
+  def main(args: Array[String]) {
+    val spark = SparkSession.builder().appName("SparkStatCleanJob")
+      .master("local[2]").getOrCreate()
+
+    val accessRDD = spark.sparkContext.textFile("/home/willhope/Documents/dev/BigData-Learning/Spark/data/access.log")
+
+    //accessRDD.take(10).foreach(println)
+
+    //RDD ==> DF
+    val accessDF = spark.createDataFrame(accessRDD.map(x => AccessConvertUtil.parseLog(x)),
+      AccessConvertUtil.struct)
+
+//        accessDF.printSchema()
+//        accessDF.show(false)
+    //如果resources目录下有hdfs.xml和core.xml两个文件，则地址写本地的话，会报错。将两个文件删除后，就不会有问题
+//    accessDF.write.format("parquet").partitionBy("day").save("/home/willhope/Documents/dev/BigData-Learning/Spark/data/logClean")
+    //coalesce设置成一个分区，如果输出路径已经存在，使用mode()覆盖源目录下的文件
+    accessDF.coalesce(1).write.format("parquet").mode(SaveMode.Overwrite).partitionBy("day").save("/home/willhope/Documents/dev/BigData-Learning/Spark/data/logClean")
+
+    spark.stop
+  }
+}
+
+
+```
+
+### 2.4 完成统计信息并将结果入库
+
+#### 1. 使用Dataframe完成统计
+
+
+
+#### 2. 使用SQL API完成统计
+
+#### 3. 将统计结果写入到MySQL
 
 这里总是会出现端口占用的情况，因此要经常使用下面的命令
 
@@ -2044,7 +2447,7 @@ ps -ef | grep 17997
 
 netstat -tunlp
 
-- Spark on YARN
+### 2.5 Spark on YARN
 
 在Spark中，支持4种可插拔的集群管理模式运行模式：
 
@@ -2111,7 +2514,7 @@ netstat -tunlp
 
 在spark目录下执行 yarn logs -applicationId application_1581676454713_0001，如果没有配置则看不见。可以在网页上面看 http://willhope-pc:8088 ，然后点击任务的history，然后再点击logs，再点击stdout  
 
-- 将数据清洗作业跑在Yarn上
+### 2.4  将数据清洗作业跑在Yarn上
 
 复制一份SparkStatCleanJob更改为SparkStatCleanJobYarn，将main方法更改为如下：
 
@@ -2224,7 +2627,7 @@ hdfs://willhope-pc:8020/input/* hdfs://willhope-pc:8020/clean
 
 spark.read.format("parquet").load("/clean/day=20170511/part-00000-71d465d1-7338-4016-8d1a-729504a9f95e.snappy.parquet").show(false)
 
-- 将统计作业跑在Yarn上
+### 2.4 将统计作业跑在Yarn上
 
 复制一份TopNStatJob更改为TopNStatJobYarn，将里面的main函数更改为
 
