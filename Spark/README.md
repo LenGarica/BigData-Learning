@@ -72,16 +72,45 @@
         - [1.1 日志数据内容](#11-日志数据内容)
         - [1.2 数据处理流程](#12-数据处理流程)
         - [1.3 项目需求](#13-项目需求)
-        - [1.4 慕课网主站日志介绍](#14-慕课网主站日志介绍)
-        - [1.5 日志清洗：](#15-日志清洗)
-        - [1.6 ip解析包的下载](#16-ip解析包的下载)
+    - [二、项目实战](#二项目实战)
+        - [2.1 日志清洗案例](#21-日志清洗案例)
+        - [2.2 ip解析包的下载](#22-ip解析包的下载)
+        - [2.3 数据清洗以及地市信息的处理](#23-数据清洗以及地市信息的处理)
+        - [2.4 需求一实现：统计最受欢迎的课程/手记的Top N访问次数](#24-需求一实现统计最受欢迎的课程手记的top-n访问次数)
+            - [1. 创建数据库以及数据表](#1-创建数据库以及数据表)
+            - [2.创建该表所对应的实体类](#2创建该表所对应的实体类)
+            - [3. 创建MySQL操作工具类](#3-创建mysql操作工具类)
+            - [４. 创建DAO层操作将数据存放表中](#４-创建dao层操作将数据存放表中)
+            - [5. 创建TopN统计函数并将结果写入MySQL](#5-创建topn统计函数并将结果写入mysql)
+        - [2.5 需求二实现：按照地市统计最受欢迎的课程/手记的Top N访问次数](#25-需求二实现按照地市统计最受欢迎的课程手记的top-n访问次数)
+            - [1. MySQL中创建对应的表](#1-mysql中创建对应的表)
+            - [2. 创建该表对应的实体类](#2-创建该表对应的实体类)
+            - [3. 创建DAO层操作将数据存放表中](#3-创建dao层操作将数据存放表中)
+            - [4. 创建地市TopN统计函数并将结果写入MySQL](#4-创建地市topn统计函数并将结果写入mysql)
+        - [2.6 需求三实现：按流量统计慕课网主站最受欢迎的Top N课程](#26-需求三实现按流量统计慕课网主站最受欢迎的top-n课程)
+            - [1. 创建数据库表](#1-创建数据库表)
+            - [2. 创建对应的实体类](#2-创建对应的实体类)
+            - [3. 创建DAO层操作将数据存放表中](#3-创建dao层操作将数据存放表中-1)
+            - [4. 按照流量进行TopN统计并将结果写入MySQL](#4-按照流量进行topn统计并将结果写入mysql)
+        - [2.7 创建按时间删除数据表](#27-创建按时间删除数据表)
+        - [2.8 Spark on YARN](#28-spark-on-yarn)
+            - [1. Spark on Yarn的两种模式](#1-spark-on-yarn的两种模式)
+            - [2. 提交到Yarn上进行测试](#2-提交到yarn上进行测试)
+        - [2.9 将数据清洗作业跑在Yarn上](#29-将数据清洗作业跑在yarn上)
+        - [2.10 将统计作业跑在Yarn上](#210-将统计作业跑在yarn上)
+    - [三、项目优化](#三项目优化)
+        - [3.1 存储格式的选择](#31-存储格式的选择)
+        - [3.2 压缩格式的选择](#32-压缩格式的选择)
+        - [3.3 代码优化](#33-代码优化)
+        - [3.3 调整并行度](#33-调整并行度)
+        - [3.4 关闭分区字段自动推断](#34-关闭分区字段自动推断)
 - [第四部分——Spark Streaming](#第四部分spark-streaming)
     - [一、实时流处理的概述](#一实时流处理的概述)
     - [二、日志收集框架Flume](#二日志收集框架flume)
     - [三、消息队列Kafka](#三消息队列kafka)
     - [四、Spark Streaming](#四spark-streaming)
     - [五、Spark Streaming集成Kafka](#五spark-streaming集成kafka)
-    - [六、Spark Streaming集成Kafka和Flume](#六spark-streaming集成kafka和flume)
+    - [六、Spark Streaming集成Kafka和Flume](#六spark-streaming集成kafka和flume)<!-- /TOC -->
 
 ` 注意： `
 
@@ -2095,6 +2124,7 @@ object HiveMySQLApp {
 ```
 
 # 第三部分——Spark SQL行为日志处理实战
+
 ## 一、项目梳理
 
 日志记录用户行为：用户每次访问网站时所有的行为数据（访问、浏览、搜索、点击...）用户行为轨迹、流量日志，根据这些行为，对用户进行推荐，在后台对用户进行分析，并为用户贴上标签。用户行为日志生成的渠道来自，web服务器。
@@ -2423,31 +2453,559 @@ object SparkStatCleanJob {
 
 ```
 
-### 2.4 完成统计信息并将结果入库
-
-#### 1. 使用Dataframe完成统计
+### 2.4 需求一实现：统计最受欢迎的课程/手记的Top N访问次数
 
 
+#### 1. 创建数据库以及数据表
 
-#### 2. 使用SQL API完成统计
+首先，创建一个数据库access，create database access character set utf8；
 
-#### 3. 将统计结果写入到MySQL
+其次，创建一张表day_video_access_topn_stat，用来存放每天课程访问次数TopN的数据。
 
-这里总是会出现端口占用的情况，因此要经常使用下面的命令
+```sql
+create table day_video_access_topn_stat(
+day varchar(8) not null,
+cms_id bigint(10) not null,
+times bigint(10) not null,
+primary key (day,cms_id)
+);
+```
 
-查看某个端口被哪个程序占用
+#### 2.创建该表所对应的实体类
 
-netstat  -anp  |grep   端口号
+根据JavaEE的开发经验，我们需要对表创建一个相对应的实体类
 
-查看进程号对应的程序
+```scala
 
-ps -ef | grep 17997
+/**
+ * 每天发课程访问次数实体类
+ * @param day
+ * @param cmsId
+ * @param times
+ */
+case class DayVideoAccessStat(day : String,cmsId:Long,times:Long) {
 
-查看指定端口号的进程情况
+}
 
-netstat -tunlp
 
-### 2.5 Spark on YARN
+```
+
+#### 3. 创建MySQL操作工具类
+
+然后创建相应的MySQL操作类，主要用来链接MySQL数据库，释放数据库连接
+
+```scala
+
+import java.sql.{Connection, DriverManager, PreparedStatement}
+
+/**
+ * 操作MySQL类
+ */
+object MySQLUtils {
+
+  def getConnection() = {
+    //一定要设置编码，否则会出错误
+    DriverManager.getConnection("jdbc:mysql://localhost:3306/access?useUnicode=true&characterEncoding=utf8&user=root&password=123456")
+
+  }
+
+  /**
+   * 释放数据库等资源
+   * @param connection
+   * @param pstmt
+   */
+  def release(connection:Connection,pstmt:PreparedStatement)={
+    try{
+      if(pstmt != null){
+        pstmt.close()
+      }
+    }catch {
+      case e : Exception => e.printStackTrace()
+    }finally {
+      if(connection != null){
+        connection.close()
+      }
+    }
+  }
+
+
+}
+
+
+```
+
+####　４. 创建DAO层操作将数据存放表中
+
+最后创建相应的操作类，即DAO层类，只包含操作表的方法，操作数据库中的表，对数据进行统计
+
+```scala
+
+import java.sql.{PreparedStatement, Connection}
+
+import scala.collection.mutable.ListBuffer
+
+/**
+ * 各个维度统计的DAO操作
+ */
+object StatDAO {
+
+
+  /**
+   * 批量保存DayVideoAccessStat到数据库
+   */
+  def insertDayVideoAccessTopN(list: ListBuffer[DayVideoAccessStat]): Unit = {
+
+    var connection: Connection = null
+    var pstmt: PreparedStatement = null
+
+    try{
+      connection = MySQLUtils.getConnection()
+
+      //设置手动提交
+      connection.set
+      Commit(false)
+
+      val sql = "insert into day_video_access_topn_stat(day,cms_id,times)values(?,?,?)"
+      pstmt = connection.prepareStatement(sql)
+
+      for(ele <- list){
+        pstmt.setString(1,ele.day)
+        pstmt.setLong(2,ele.cmsId)
+        pstmt.setLong(3,ele.times)
+
+        //使用batch能够更好的拥有性能
+        pstmt.addBatch()
+      }
+
+      // 提交
+      pstmt.executeBatch()
+      connection.commit()
+
+    }catch {
+      case e : Exception => e.printStackTrace()
+    }finally {
+      MySQLUtils.release(connection,pstmt)
+    }
+
+  }
+
+}
+
+
+```
+
+#### 5. 创建TopN统计函数并将结果写入MySQL
+
+```scala
+
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
+
+/**
+ * TopN统计Spark作业
+ */
+object TopNStatJob {
+
+
+  def main(args: Array[String]): Unit = {
+
+    val spark = SparkSession.builder().appName("TopNStatJob").config("spark.sql.sources.partitionColumnTypeInference.enabled","false")
+      .master("local[2]").getOrCreate()
+
+    val acDF = spark.read.format("parquet").load("/home/willhope/Documents/dev/BigData-Learning/Spark/data/logClean")
+
+    acDF.printSchema()
+    //printSchema发现，day的属性是Integer类型，但是我们原先定义的是String类型，我们需要在SparkSession中设置参数
+    /**
+     * root
+     * |-- url: string (nullable = true)
+     * |-- cmsType: string (nullable = true)
+     * |-- cmsId: long (nullable = true)
+     * |-- traffic: long (nullable = true)
+     * |-- ip: string (nullable = true)
+     * |-- city: string (nullable = true)
+     * |-- time: string (nullable = true)
+     * |-- day: integer (nullable = true)
+     */
+
+    acDF.show(false)
+
+    videoAccessTopNStat(spark,acDF,"20170511")
+
+    spark.stop()
+
+  }
+
+
+  /**
+   * 最受欢迎的TopN课程
+   */
+  def videoAccessTopNStat(spark: SparkSession, accessDF:DataFrame, day:String): Unit = {
+
+    /**
+     * 使用DataFrame的方式进行统计
+     */
+    import spark.implicits._
+    //$ "" 相当于column，agg是聚合函数放在org.apache.spark.sql.functions._包下面
+    val videoAccessTopNDF = accessDF.filter($"day" === day && $"cmsType" === "video")
+      .groupBy("day","cmsId").agg(count("cmsId").as("times")).orderBy($"times".desc)
+
+    /**
+     * 使用临时表形式，sql进行查询
+     */
+//    accessDF.createOrReplaceTempView("access_logs")
+//    val videoAccessTopNDF = spark.sql("select from access_logs where day=$day and cmsType='video' group by day,cmsId order by times desc")
+
+    /**
+     * 将统计结果写入到MySQL中
+     */
+    try{
+      videoAccessTopNDF.foreachPartition(partitionOfRecords => {
+      val list = new ListBuffer[DayVideoAccessStat]
+
+      partitionOfRecords.foreach(info =>{
+        val day = info.getAs[String]("day")
+        val cmsId = info.getAs[Long]("cmsId")
+        val times = info.getAs[Long]("times")
+
+        list.append(DayVideoAccessStat(day,cmsId,times))
+      })
+      StatDAO.insertDayVideoAccessTopN(list)
+    })
+    }catch {
+      case e : Exception => e.printStackTrace()
+    }
+
+
+    videoAccessTopNDF.show(false)
+
+  }
+
+}
+
+```
+
+### 2.5 需求二实现：按照地市统计最受欢迎的课程/手记的Top N访问次数
+
+#### 1. MySQL中创建对应的表
+
+```sql
+
+create table day_video_city_access_topn_stat(
+day varchar(8) not null,
+cms_id bigint(10) not null,
+city varchar(20) not null,
+times bigint(10) not null,
+times_rank int not null,
+primary key(day,cms_id,city)
+);
+
+```
+
+#### 2. 创建该表对应的实体类
+
+```scala
+
+/**
+ * 创建按地市信息
+ * @param day
+ * @param cmsId
+ * @param times
+ * @param timesRank
+ */
+case class DayCityVideoAccessStat(day:String,cmsId:Long,times:String,timesRank:Int)
+
+```
+
+#### 3. 创建DAO层操作将数据存放表中
+
+在StatDAO类中，添加insertDayCityVideoAccessTopN方法，批量保存DayCityVideoAccessStat到数据库
+
+```scala
+
+ /**
+   * 批量保存DayCityVideoAccessStat到数据库
+   */
+  def insertDayCityVideoAccessTopN(list: ListBuffer[DayCityVideoAccessStat]): Unit = {
+
+    var connection: Connection = null
+    var pstmt: PreparedStatement = null
+
+    try{
+      connection = MySQLUtils.getConnection()
+
+      //设置手动提交
+      connection.set
+      Commit(false)
+
+      val sql = "insert into day_video_city_access_topn_stat(day,cms_id,city,times,times_rank)values(?,?,?,?,?)"
+      pstmt = connection.prepareStatement(sql)
+
+      for(ele <- list){
+        pstmt.setString(1,ele.day)
+        pstmt.setLong(2,ele.cmsId)
+        pstmt.setString(3,ele.city)
+        pstmt.setString(4,ele.times)
+        pstmt.setInt(5,ele.timesRank)
+
+        //使用batch能够更好的拥有性能
+        pstmt.addBatch()
+      }
+
+      // 提交
+      pstmt.executeBatch()
+      connection.commit()
+
+    }catch {
+      case e : Exception => e.printStackTrace()
+    }finally {
+      MySQLUtils.release(connection,pstmt)
+    }
+
+  }
+
+```
+
+
+#### 4. 创建地市TopN统计函数并将结果写入MySQL
+
+在TopNStat类中添加cityAccessTopNStat函数，并将结果写入MySQL中。并在main函数中调用此方法。
+
+```scala
+
+   /**
+   * 按照地市信息进行TopN统计
+   * @param spark
+   * @param accessDF
+   * @param day
+   */
+  def cityAccessTopNStat(spark: SparkSession, accessDF: DataFrame, day: String) = {
+
+    /**
+     * 使用DataFrame的方式进行统计
+     */
+    import spark.implicits._
+    //$ "" 相当于column，agg是聚合函数放在org.apache.spark.sql.functions._包下面
+    val cityAccessTopNDF = accessDF.filter($"day" === day && $"cmsType" === "video")
+      .groupBy("day","city","cmsId").agg(count("cmsId").as("times")).orderBy($"times".desc)
+
+    //使用窗口函数window,用于将数据进行划分
+    val cityDF = cityAccessTopNDF.select(cityAccessTopNDF("day"),
+      cityAccessTopNDF("cmsId"),
+      cityAccessTopNDF("city"),
+      cityAccessTopNDF("times"),
+      row_number().over(Window.partitionBy(cityAccessTopNDF("city")).orderBy(cityAccessTopNDF("times").desc)
+      ) .as("times_rank")
+    ).filter("times_rank <= 3")//.show(false)
+
+    /**
+     * 将统计结果写入到MySQL中
+     */
+    try{
+      cityDF.foreachPartition(partitionOfRecords => {
+        val list = new ListBuffer[DayCityVideoAccessStat]
+
+        partitionOfRecords.foreach(info =>{
+          val day = info.getAs[String]("day")
+          val cmsId = info.getAs[Long]("cmsId")
+          val city = info.getAs[String]("city")
+          val times = info.getAs[Long]("times")
+          val timesRank = info.getAs[Int]("times_rank")
+          list.append(DayCityVideoAccessStat(day,cmsId,city,times,timesRank))
+        })
+        StatDAO.insertDayCityVideoAccessTopN(list)
+      })
+    }catch {
+      case e : Exception => e.printStackTrace()
+    }
+
+//    cityAccessTopNDF.show(false)
+
+  }
+
+```
+
+### 2.6 需求三实现：按流量统计慕课网主站最受欢迎的Top N课程
+
+#### 1. 创建数据库表
+```sql
+
+create table day_video_traffics_topn_stat(
+day varchar(8) not null,
+cms_id bigint(10) not null,
+traffics bigint(20) not null,
+primary key(day,cms_id)
+);
+
+```
+
+#### 2. 创建对应的实体类
+
+```scala
+
+/**
+ * 创建day_video_traffics_topn_stat对应的实体类
+ * @param day
+ * @param cmsId
+ * @param traffics
+ */
+case class DayVideoTrafficsStat(day:String,cmsId:Long,traffics:Long)
+
+
+```
+
+#### 3. 创建DAO层操作将数据存放表中
+
+在StatDAO类中，添加insertDayVideoTrafficsTopN方法，批量保存DayVideoTrafficsStat到数据库
+
+```scala
+
+ /**
+   * 批量保存DayVideoTrafficsStat到数据库
+   */
+  def insertDayVideoTrafficsTopN(list: ListBuffer[DayVideoTrafficsStat]): Unit = {
+
+    var connection: Connection = null
+    var pstmt: PreparedStatement = null
+
+    try {
+      connection = MySQLUtils.getConnection()
+
+      connection.set
+      Commit(false) //设置手动提交
+
+      val sql = "insert into day_video_traffics_topn_stat(day,cms_id,traffics) values (?,?,?) "
+      pstmt = connection.prepareStatement(sql)
+
+      for (ele <- list) {
+        pstmt.setString(1, ele.day)
+        pstmt.setLong(2, ele.cmsId)
+        pstmt.setLong(3, ele.traffics)
+        pstmt.addBatch()
+      }
+
+      pstmt.executeBatch() // 执行批量处理
+      connection.commit() //手工提交
+    } catch {
+      case e: Exception => e.printStackTrace()
+    } finally {
+      MySQLUtils.release(connection, pstmt)
+    }
+  }
+
+```
+
+#### 4. 按照流量进行TopN统计并将结果写入MySQL
+
+在TopNStat类中添加cityAccessTopNStat函数，并将结果写入MySQL中。并在main函数中调用此方法。
+
+```scala
+
+  /**
+   * 按照流量进行TopN统计
+   * @param spark
+   * @param accessDF
+   * @param day
+   */
+  def videoTrafficsTopNStat(spark: SparkSession, accessDF: DataFrame, day: String) = {
+    import spark.implicits._
+
+    val videoTrafficsTopNDF = accessDF.filter($"day" === day && $"cmsType" === "video")
+      .groupBy("day","cmsId")
+      .agg(count("traffic").as("traffics")).orderBy($"traffics".desc)
+    /**
+     * 将统计结果写入到MySQL中
+     */
+    try {
+      videoTrafficsTopNDF.foreachPartition(partitionOfRecords => {
+        val list = new ListBuffer[DayVideoTrafficsStat]
+
+        partitionOfRecords.foreach(info => {
+          val day = info.getAs[String]("day")
+          val cmsId = info.getAs[Long]("cmsId")
+          val traffics = info.getAs[Long]("traffics")
+          list.append(DayVideoTrafficsStat(day, cmsId, traffics))
+        })
+
+        StatDAO.insertDayVideoTrafficsTopN(list)
+      })
+    } catch {
+      case e:Exception => e.printStackTrace()
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
+
+    val spark = SparkSession.builder().appName("TopNStatJob").config("spark.sql.sources.partitionColumnTypeInference.enabled","false")
+      .master("local[2]").getOrCreate()
+
+    val acDF = spark.read.format("parquet").load("/home/willhope/Documents/dev/BigData-Learning/Spark/data/logClean")
+
+    acDF.printSchema()
+    //printSchema发现，day的属性是Integer类型，但是我们原先定义的是String类型，我们需要在SparkSession中设置参数
+    /**
+     * root
+     * |-- url: string (nullable = true)
+     * |-- cmsType: string (nullable = true)
+     * |-- cmsId: long (nullable = true)
+     * |-- traffic: long (nullable = true)
+     * |-- ip: string (nullable = true)
+     * |-- city: string (nullable = true)
+     * |-- time: string (nullable = true)
+     * |-- day: integer (nullable = true)
+     */
+
+    acDF.show(false)
+
+    val day = "20170511"
+//    videoAccessTopNStat(spark,acDF,day)
+
+//        cityAccessTopNStat(spark,acDF,day)
+
+    videoTrafficsTopNStat(spark,acDF,day)
+
+    spark.stop()
+
+  }
+```
+
+
+### 2.7 创建按时间删除数据表
+
+在DAO层，我们需要添加一个删除表内容的操作，用于指定删除某一天的表内容。
+
+```scala
+
+/**
+   * 按照传入的时间，进行删除表
+   * @param day
+   */
+  def deleteData(day:String):Unit={
+    val tables = Array("day_video_access_topn_stat","day_video_city_access_topn_stat","day_video_traffics_topn_stat")
+
+    var connection : Connection = null
+    var pstmt: PreparedStatement = null
+    try{
+      connection = MySQLUtils.getConnection()
+
+      for (table <- tables){
+        //相当于delete from table ... day = 传入的参数
+        val deleteSQL = s"delete from $table where day = ?"
+        pstmt = connection.prepareStatement(deleteSQL)
+        pstmt.setString(1,day)
+        pstmt.execute()
+      }
+
+    }catch {
+      case e : Exception => e.printStackTrace()
+    }finally {
+      MySQLUtils.release(connection,pstmt)
+    }
+  }
+
+```
+
+### 2.8 Spark on YARN
 
 在Spark中，支持4种可插拔的集群管理模式运行模式：
 
@@ -2460,6 +3018,8 @@ netstat -tunlp
 4）Mesos：很少使用
 
 不管使用什么模式，Spark应用程序的代码是一模一样的，只需要在提交的时候通过--master参数来指定我们的运行模式即可
+
+#### 1. Spark on Yarn的两种模式
 
 - Spark on Yarn的Client模式
 
@@ -2477,7 +3037,9 @@ netstat -tunlp
 
 	日志是在终端看不到的，因为日志是在Driver上，只能通过yarn logs -applicationIdapplication_id
 
-- 提交
+#### 2. 提交到Yarn上进行测试
+
+首先，将这句话 export HADOOP_CONF_DIR=/home/willhope/app/hadoop-2.6.0-cdh5.15.1/etc/hadoop 配置到spark目录下的conf下的env.sh中。这里使用Spark自带的测试用例进行测试。
 
 ```bash
 
@@ -2489,18 +3051,10 @@ netstat -tunlp
 /home/willhope/app/spark-2.4.4-bin-2.6.0-cdh5.15.1/examples/jars/spark-examples_2.11-2.4.4.jar \
 4
 
-此处的yarn就是我们的yarn client模式
-如果是yarn cluster模式的话，yarn-cluster
 ```
+此处的yarn就是我们的yarn client模式。如果是yarn cluster模式的话，需要将--master 后面的yarn更改为yarn-cluster
 
-此时会报错：Exception in thread "main" java.lang.Exception: When running with master 'yarn' either HADOOP_CONF_DIR or YARN_CONF_DIR must be set in the environment.
-
-如果想运行在YARN之上，那么就必须要设置HADOOP_CONF_DIR或者是YARN_CONF_DIR
-
-1）将这句话 export HADOOP_CONF_DIR=/home/willhope/app/spark-2.4.4-bin-2.6.0-cdh5.15.1/etc/hadoop 配置到spark目录下的conf下的env.sh中
-
-或者2) $SPARK_HOME/conf/spark-env.sh
-
+```bash
 
 ./bin/spark-submit \
 --class org.apache.spark.examples.SparkPi \
@@ -2510,50 +3064,55 @@ netstat -tunlp
 /home/willhope/app/spark-2.4.4-bin-2.6.0-cdh5.15.1/examples/jars/spark-examples_2.11-2.4.4.jar \
 4
 
+```
+
 结果的查看
 
 在spark目录下执行 yarn logs -applicationId application_1581676454713_0001，如果没有配置则看不见。可以在网页上面看 http://willhope-pc:8088 ，然后点击任务的history，然后再点击logs，再点击stdout  
 
-### 2.4  将数据清洗作业跑在Yarn上
+### 2.9 将数据清洗作业跑在Yarn上
 
 复制一份SparkStatCleanJob更改为SparkStatCleanJobYarn，将main方法更改为如下：
 
-```java
+```scala
+package org.example.project.log
+
+import org.apache.spark.sql.{SaveMode, SparkSession}
+
+/**
+ * 运行在Yarn上
+ */
+object SparkStatCleanJobYarn {
+
   def main(args: Array[String]) {
 
     if(args.length != 2){
-      println("Usage : SparkStatCleanJobYarn <inputPath> <outPath>")
+      println("Usage: SparkStatCleanJobYarn <inputPath> <outputPath>")
       System.exit(1)
     }
 
-    val Array(inputPath , outPath) = args
+    val Array(inputPath , outputPath) = args
 
-    val spark = SparkSession.builder()
-      .config("spark.sql.parquet.compression.codec","gzip")
-      .getOrCreate()
+    val spark = SparkSession.builder().getOrCreate()
 
     val accessRDD = spark.sparkContext.textFile(inputPath)
 
+    //accessRDD.take(10).foreach(println)
 
     //RDD ==> DF
     val accessDF = spark.createDataFrame(accessRDD.map(x => AccessConvertUtil.parseLog(x)),
       AccessConvertUtil.struct)
 
-//    accessDF.printSchema()
-//    accessDF.show(false)
-
-    //下面这几句注释是调优点
-    //coalesce这个方法用来制定输出的文件个数
-    //partitionBy用来进行按天分组
-    //mode方法用来解决已经存在文件夹的问题
-    accessDF.coalesce(1).write.format("parquet").mode(SaveMode.Overwrite)
-      .partitionBy("day").save(outPath)
+    accessDF.coalesce(1).write.format("parquet").mode(SaveMode.Overwrite).partitionBy("day").save(outputPath)
 
     spark.stop
   }
+}
+
+
 ```
 
-打包时要注意，pom.xml中需要添加如下plugin
+打包时要注意，pom.xml中需要给每个dependency下面添加<scope>provided</scope>，以及添加如下build。
 
 ```xml
     <dependency>
@@ -2589,53 +3148,205 @@ netstat -tunlp
 
 
 
-<plugin>
-    <artifactId>maven-assembly-plugin</artifactId>
-    <configuration>
-        <archive>
-            <manifest>
+  <build>
+    <sourceDirectory>src/main/scala</sourceDirectory>
+    <testSourceDirectory>src/test/scala</testSourceDirectory>
+    <plugins>
+        <plugin>
+          <artifactId>maven-assembly-plugin</artifactId>
+          <configuration>
+            <archive>
+              <manifest>
                 <mainClass></mainClass>
-            </manifest>
-        </archive>
-        <descriptorRefs>
-            <descriptorRef>jar-with-dependencies</descriptorRef>
-        </descriptorRefs>
-    </configuration>
-</plugin>
+              </manifest>
+            </archive>
+            <descriptorRefs>
+              <descriptorRef>jar-with-dependencies</descriptorRef>
+            </descriptorRefs>
+          </configuration>
+        </plugin>
+      </plugins>
+ </build>
 
 ```
 
-在这个项目的目录下，使用 mvn assembly:assembly 进行打包，之后会在项目的target目录下产生一个sql-1.0-jar-with-dependencies.jar，然后将其放到当前用户目录下的lib中。再在spark目录下进行提交：
+在这个项目的目录下，使用 mvn assembly:assembly 进行打包，之后会在项目的target目录下产生一个sql-1.0-jar-with-dependencies.jar，然后拷贝一份将其放到自己顺手使用的目录下。再在spark目录下进行提交：
 
-先将要处理的access.log上传到hdfs上的input的目录下，然后在hdfs创建输出的目录
+先将要处理的access.log上传到hdfs上的access/input的目录下，然后在hdfs创建输出的目录access/output,在执行下面的语句进行提交，提交后，会输出一个parquet格式的文件。
+
+`注意：--files在spark中的使用`，我们需要将ip解析的文件添加进去。本地测试时，这两个文件存放在resources目录下，现在放在/home/willhope/lib/下面。
 
 ```
 
 ./bin/spark-submit \
---class spark.ActualProject.LogJob.SparkStatCleanJobYARN \
---name SparkStatCleanJobYARN \
+--class org.example.project.log.SparkStatCleanJobYarn \
+--name SparkStatCleanJobYarn \
 --master yarn \
 --executor-memory 1G \
 --num-executors 1 \
---files /home/hadoop/lib/ipDatabase.csv,/home/hadoop/lib/ipRegion.xlsx \
+--files /home/willhope/lib/ipDatabase.csv,/home/hadoop/lib/ipRegion.xlsx \
 /home/willhope/lib/sql-1.0-jar-with-dependencies.jar \
-hdfs://willhope-pc:8020/input/* hdfs://willhope-pc:8020/clean
+hdfs://willhope-pc:8020/access/input/* hdfs://willhope-pc:8020/access/output
 
 ```
 
-注意：--files在spark中的使用
+我们在spark-shell中查看一下是否有数据：
 
-spark.read.format("parquet").load("/clean/day=20170511/part-00000-71d465d1-7338-4016-8d1a-729504a9f95e.snappy.parquet").show(false)
-
-### 2.4 将统计作业跑在Yarn上
+```
+spark.read.format("parquet").load("hdfs://willhope-pc:8020/access/output/day=20170511/part-00000-71d465d1-7338-4016-8d1a-729504a9f95e.snappy.parquet").show(false)
+```
+### 2.10 将统计作业跑在Yarn上
 
 复制一份TopNStatJob更改为TopNStatJobYarn，将里面的main函数更改为
 
-```java
+```scala
 
- def main(args: Array[String]): Unit = {
+package org.example.project.log
+
+import org.apache.spark.sql.expressions.Window
+import org.apache.spark.sql.functions._
+import org.apache.spark.sql.{DataFrame, SparkSession}
+
+import scala.collection.mutable.ListBuffer
+
+/**
+ * TopN统计Spark作业
+ */
+object TopNStatJobYarn {
+
+  /**
+   * 最受欢迎的TopN课程
+   */
+  def videoAccessTopNStat(spark: SparkSession, accessDF:DataFrame, day:String): Unit = {
+
+    /**
+     * 使用DataFrame的方式进行统计
+     */
+    import spark.implicits._
+    //$ "" 相当于column，agg是聚合函数放在org.apache.spark.sql.functions._包下面
+    val videoAccessTopNDF = accessDF.filter($"day" === day && $"cmsType" === "video")
+      .groupBy("day","cmsId").agg(count("cmsId").as("times")).orderBy($"times".desc)
+
+    /**
+     * 使用临时表形式，sql进行查询
+     */
+//    accessDF.createOrReplaceTempView("access_logs")
+//    val videoAccessTopNDF = spark.sql("select from access_logs where day=$day and cmsType='video' group by day,cmsId order by times desc")
+
+    /**
+     * 将统计结果写入到MySQL中
+     */
+    try{
+      videoAccessTopNDF.foreachPartition(partitionOfRecords => {
+      val list = new ListBuffer[DayVideoAccessStat]
+
+      partitionOfRecords.foreach(info =>{
+        val day = info.getAs[String]("day")
+        val cmsId = info.getAs[Long]("cmsId")
+        val times = info.getAs[Long]("times")
+
+        list.append(DayVideoAccessStat(day,cmsId,times))
+      })
+      StatDAO.insertDayVideoAccessTopN(list)
+    })
+    }catch {
+      case e : Exception => e.printStackTrace()
+    }
 
 
+
+    videoAccessTopNDF.show(false)
+
+  }
+
+
+  /**
+   * 按照地市进行统计TopN课程
+   * @param spark
+   * @param accessDF
+   * @param day
+   */
+  def cityAccessTopNStat(spark: SparkSession, accessDF:DataFrame, day:String): Unit = {
+    import spark.implicits._
+
+    val cityAccessTopNDF = accessDF.filter($"day" === day && $"cmsType" === "video")
+      .groupBy("day","city","cmsId")
+      .agg(count("cmsId").as("times"))
+
+    //cityAccessTopNDF.show(false)
+
+    //Window函数在Spark SQL的使用
+
+    val top3DF = cityAccessTopNDF.select(
+      cityAccessTopNDF("day"),
+      cityAccessTopNDF("city"),
+      cityAccessTopNDF("cmsId"),
+      cityAccessTopNDF("times"),
+      row_number().over(Window.partitionBy(cityAccessTopNDF("city"))
+        .orderBy(cityAccessTopNDF("times").desc)
+      ).as("times_rank")
+    ).filter("times_rank <=3") //.show(false)  //Top3
+
+
+    /**
+     * 将统计结果写入到MySQL中
+     */
+    try {
+      top3DF.foreachPartition(partitionOfRecords => {
+        val list = new ListBuffer[DayCityVideoAccessStat]
+
+        partitionOfRecords.foreach(info => {
+          val day = info.getAs[String]("day")
+          val cmsId = info.getAs[Long]("cmsId")
+          val city = info.getAs[String]("city")
+          val times = info.getAs[Long]("times")
+          val timesRank = info.getAs[Int]("times_rank")
+          list.append(DayCityVideoAccessStat(day, cmsId, city, times, timesRank))
+        })
+
+        StatDAO.insertDayCityVideoAccessTopN(list)
+      })
+    } catch {
+      case e:Exception => e.printStackTrace()
+    }
+
+  }
+
+  /**
+   * 按照流量进行TopN统计
+   *
+   * @param spark
+   * @param accessDF
+   * @param day
+   */
+  def videoTrafficsTopNStat(spark: SparkSession, accessDF: DataFrame, day: String) = {
+    import spark.implicits._
+
+    val videoTrafficsTopNDF = accessDF.filter($"day" === day && $"cmsType" === "video")
+      .groupBy("day","cmsId")
+      .agg(count("traffic").as("traffics")).orderBy($"traffics".desc)
+    /**
+     * 将统计结果写入到MySQL中
+     */
+    try {
+      videoTrafficsTopNDF.foreachPartition(partitionOfRecords => {
+        val list = new ListBuffer[DayVideoTrafficsStat]
+
+        partitionOfRecords.foreach(info => {
+          val day = info.getAs[String]("day")
+          val cmsId = info.getAs[Long]("cmsId")
+          val traffics = info.getAs[Long]("traffics")
+          list.append(DayVideoTrafficsStat(day, cmsId, traffics))
+        })
+
+        StatDAO.insertDayVideoTrafficsTopN(list)
+      })
+    } catch {
+      case e:Exception => e.printStackTrace()
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
     if(args.length != 2){
       println("Usage : TopNStatJobYarn <inputPath> <day>")
       System.exit(1)
@@ -2644,23 +3355,20 @@ spark.read.format("parquet").load("/clean/day=20170511/part-00000-71d465d1-7338-
     val Array(inputPath , day) = args
 
     //我们自定义的结构体中time是string类型，但是spark会将此类型改变为int类型，因此使用config方法让其禁止更改
-    val spark = SparkSession.builder().appName("TopNStatJob")
+    val spark = SparkSession.builder().appName("TopNStatJobYarn")
       .config("spark.sql.sources.partitionColumnTypeInference.enabled","false")
       .master("local[2]").getOrCreate()
 
     val accessDF = spark.read.format("parquet").load(inputPath)
 
-//    accessDF.printSchema()
-//    accessDF.show(false)
+    //    accessDF.printSchema()
+    //    accessDF.show(false)
 
     StatDAO.deleteData(day)
 
 
     //使用dataFrame统计,最受学生欢迎的TopN课程
-//    videoAccessTopNStat(spark,accessDF,day)
-
-    //使用sql进行统计
-    videoAccessTopNStat2(spark,accessDF,day)
+    videoAccessTopNStat(spark,accessDF,day)
 
     //按照地市进行统计TopN课程
     cityAccessTopNStat(spark , accessDF,day)
@@ -2672,6 +3380,9 @@ spark.read.format("parquet").load("/clean/day=20170511/part-00000-71d465d1-7338-
 
   }
 
+}
+
+
 ```
 
 在这个项目的目录下，先使用mvn clean，再使用 mvn assembly:assembly 进行打包，之后会在项目的target目录下产生一个sql-1.0-jar-with-dependencies.jar，然后将其放到当前用户目录下的lib中。再在spark目录下进行提交：
@@ -2681,37 +3392,57 @@ spark.read.format("parquet").load("/clean/day=20170511/part-00000-71d465d1-7338-
 ```
 
 ./bin/spark-submit \
---class spark.ActualProject.LogJob.TopNStatJobYARN \
---name TopNStatJobYARN \
+--class org.example.project.log.TopNStatJobYarn \
+--name TopNStatJobYarn \
 --master yarn \
 --executor-memory 1G \
 --num-executors 1 \
 /home/willhope/lib/sql-1.0-jar-with-dependencies.jar \
-hdfs://willhope:8020/clean 20170511 
+hdfs://willhope:8020/access/output 20170511 
 
 ```
+## 三、项目优化
 
-- 代码优化
-
-集群优化：
+### 3.1 存储格式的选择
 
 存储格式的选择：http://www.infoq.com/cn/articles/bigdata-store-choose/
 
+### 3.2 压缩格式的选择
+
 压缩格式的选择：https://www.ibm.com/developerworks/cn/opensource/os-cn-hadoop-compression-analysis/
 
-调整并行度
+### 3.3 代码优化
+
+在数据统计操作的时候，我们需要使用高性能算子。
+
+例如：通常情况下我们创建的Dataframe需要与MySQL进行打交道的时候，我们第一步先调用foreachPartition(),在对每一个partition进行for循环，使用list将所有数据构件好，之后再定义sql语句，遍历list取出数据，使用JDBC的addBatch()方法提高效率，在批量更新SQL操作的时候建议使用addBatch，这样效率是高些，数据量越大越能体现出来。
+
+其次，我们需要合理复用已有的程序，如果多个函数中，我们重复进行一个操作，那就可以将此操作使用函数进行一个封装，或者我们需要重复写一个变量，那个将其抽取出来，写成参数传入函数。我们要多学习设计模式方面的知识，使得我们的程序更具有健壮性。
+
+### 3.3 调整并行度
+
+spark.sql.shuffle.partitions可用来进行设置partition的数量，一个partition就是一个task。默认的partition值为200，在实际工程中，partition值如果设置的不合理，则会影响性能。
 
 ```
 
 ./bin/spark-submit \
---class com.imooc.log.TopNStatJobYARN \
---name TopNStatJobYARN \
+--class org.example.project.log.TopNStatJobYarn \
+--name TopNStatJobYarn \
 --master yarn \
 --executor-memory 1G \
 --num-executors 1 \
 --conf spark.sql.shuffle.partitions=100 \
 /home/hadoop/lib/sql-1.0-jar-with-dependencies.jar \
-hdfs://hadoop001:8020/imooc/clean 20170511 
+hdfs://hadoop001:8020/access/output 20170511 
+```
+
+### 3.4 关闭分区字段自动推断
+
+我们在main函数中设置SparkSession和主类时，可以讲分区字段自动推断关闭，来提升性能。
+
+```scala
+    val spark = SparkSession.builder().appName("TopNStatJob").config("spark.sql.sources.partitionColumnTypeInference.enabled","false")
+      .master("local[2]").getOrCreate()，
 ```
 
 # 第四部分——Spark Streaming
