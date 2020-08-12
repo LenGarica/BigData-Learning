@@ -594,3 +594,412 @@ object StreamingWCScalaApp {
 }
 
 ```
+
+
+## 五、DataSet API 编程
+
+编程模型： Source(源数据)  ===》 transformation(处理)  ===》 Sink(目的地)
+
+### 5.1 数据源的读取
+
+#### 1. 从集合中读取数据
+
+首先，使用maven在idea中创建一个空的scala工程，在pom文件中，添加如下语句：
+
+```xml
+  <properties>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+    <flink.version>1.7.0</flink.version>
+    <scala.binary.version>2.11</scala.binary.version>
+    <scala.version>2.11.12</scala.version>
+    <hadoop.version>2.6.0-cdh5.15.1</hadoop.version>
+  </properties>
+
+  <repositories>
+    <repository>
+      <id>cloudera</id>
+      <url>https://repository.cloudera.com/artifactory/cloudera-repos</url>
+    </repository>
+  </repositories>
+
+  <pluginRepositories>
+    <pluginRepository>
+      <id>scala-tools.org</id>
+      <name>Scala-Tools Maven2 Repository</name>
+      <url>http://scala-tools.org/repo-releases</url>
+    </pluginRepository>
+  </pluginRepositories>
+
+  <dependencies>
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-scala_${scala.binary.version}</artifactId>
+      <version>${flink.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-streaming-scala_${scala.binary.version}</artifactId>
+      <version>${flink.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-table_2.11</artifactId>
+      <version>${flink.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.scala-lang</groupId>
+      <artifactId>scala-library</artifactId>
+      <version>${scala.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.slf4j</groupId>
+      <artifactId>slf4j-log4j12</artifactId>
+      <version>1.7.7</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.hadoop</groupId>
+      <artifactId>hadoop-client</artifactId>
+      <version>${hadoop.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>log4j</groupId>
+      <artifactId>log4j</artifactId>
+      <version>1.2.17</version>
+    </dependency>
+
+    <dependency>
+      <groupId>mysql</groupId>
+      <artifactId>mysql-connector-java</artifactId>
+      <version>5.1.47</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-connector-filesystem_2.11</artifactId>
+      <version>${flink.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.flink</groupId>
+      <artifactId>flink-connector-kafka_2.11</artifactId>
+      <version>${flink.version}</version>
+    </dependency>
+
+    <dependency>
+      <groupId>org.apache.kafka</groupId>
+      <artifactId>kafka-clients</artifactId>
+      <version>2.4.0</version>
+    </dependency>
+  </dependencies>
+```
+
+scala版本：
+
+```scala
+package flink.datasetcollection
+
+import org.apache.flink.api.scala.{ExecutionEnvironment, createTypeInformation}
+
+object DataSetDataSourceApp {
+
+  def main(args: Array[String]): Unit = {
+
+    val env = ExecutionEnvironment.getExecutionEnvironment
+    fromCollection(env)
+
+  }
+
+  def fromCollection(env:ExecutionEnvironment):Unit={
+
+    val data = 1 to 10
+    env.fromCollection(data).print()
+
+  }
+
+}
+```
+
+java版本：
+
+
+```java
+package flink.datasetcollection;
+
+import org.apache.flink.api.java.ExecutionEnvironment;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class JDataSetDataSourceApp {
+
+
+    public static void main(String[] args)throws Exception {
+        ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+        fromCollection(env);
+    }
+
+    public static void fromCollection(ExecutionEnvironment env) throws Exception{
+        List<Integer> list = new ArrayList<Integer>();
+        for (int i = 1; i <= 10; i++) {
+            list.add(i);
+        }
+        env.fromCollection(list).print();
+    }
+
+
+}
+```
+
+#### 2. 从文件或文件夹中读取数据
+
+scala版本：
+
+```scala
+
+package flink.datasetfile
+
+import org.apache.flink.api.scala.ExecutionEnvironment
+
+object DataSetDataSourceApp {
+
+  def main(args: Array[String]): Unit = {
+
+    val env = ExecutionEnvironment.getExecutionEnvironment
+
+    fromLocalFile(env)
+    fromLocalDir(env)
+  }
+
+  //从文件中读取
+  def fromLocalFile(env:ExecutionEnvironment):Unit={
+    val inputPath = "file:///home/willhope/data/input/hello.txt"
+    env.readTextFile(inputPath).print()
+  }
+  
+  //从文件夹中读取
+  def fromLocalDir(env: ExecutionEnvironment):Unit={
+    val inputDir = "file:///home/willhope/data/input"
+    env.readTextFile(inputDir).print()
+  }
+
+}
+
+```
+
+
+Java版本：
+
+
+```java
+
+package flink.datasetfile;
+
+import org.apache.flink.api.java.ExecutionEnvironment;
+
+public class JDataSetDataSourceApp {
+
+    public static void main(String[] args) throws Exception{
+
+        ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+
+        fromLocalFile(env);
+
+        fromLocalDir(env);
+    }
+
+    public static void fromLocalFile(ExecutionEnvironment env)throws Exception{
+        String inputPath = "file:///home/willhope/data/input/hello.txt";
+        env.readTextFile(inputPath).print();
+    }
+
+    public static void fromLocalDir(ExecutionEnvironment env)throws Exception{
+        String inputDir = "file:///home/willhope/data/input";
+        env.readTextFile(inputDir).print();
+    }
+
+}
+```
+
+#### 3. 从Csv中读取数据
+
+对CSV文件中字段属性的解析有多种方法，tuple定义法，caseclass方法，pojo方法。
+
+scala版本：
+
+```scala
+import org.apache.flink.api.scala._
+
+object DataSetDataSourceApp {
+
+  def main(args: Array[String]): Unit = {
+    val env = ExecutionEnvironment.getExecutionEnvironment
+    csvFile(env)
+
+  }
+
+  def csvFile(environment: ExecutionEnvironment):Unit={
+    val inputPath = "file:///home/willhope/data/people.csv"
+    //使用tuple形式定义csv文件中的字段属性
+    //使用ignoreFirstLine=true，忽略第一行的解析
+    environment.readCsvFile[(String,Int,String)](inputPath,ignoreFirstLine = true).print()
+    //也可以读取两列
+    environment.readCsvFile[(String,Int)](inputPath,ignoreFirstLine = true).print()
+
+    //使用case class形式解析文件
+    case class MyCaseClass(name:String,age:Int)
+    environment.readCsvFile[MyCaseClass](inputPath,ignoreFirstLine = true,includedFields = Array(0,1)).print()
+
+    //pojo形式，使用Java定义一个Person类，使用Java更加直观一些，当然使用scala也可以，scala会自动生成getter和setter方法。
+    environment.readCsvFile[Person](inputPath,ignoreFirstLine = true,pojoFields = Array("name","age","work")).print()
+
+  }
+
+}
+
+
+```
+
+java版本：
+
+```java
+import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.api.java.tuple.Tuple3;
+
+public class JDataSetDataSourceApp {
+
+    public static void main(String[] args) throws Exception {
+        ExecutionEnvironment executionEnvironment = ExecutionEnvironment.getExecutionEnvironment();
+        csvFile(executionEnvironment);
+    }
+
+    public static void csvFile(ExecutionEnvironment env)throws Exception{
+        String inputPath = "file:///home/willhope/data/people.csv";
+
+        //使用tuple方式
+        DataSet<Tuple3<String, Integer, String>> csvInput = env.readCsvFile(inputPath)
+                .fieldDelimiter(",")
+                .types(String.class,Integer.class, String.class);
+        csvInput.print();
+
+        //使用pojo方式
+        DataSet<Person> csvInput2 = env.readCsvFile(inputPath).ignoreFirstLine()
+                .pojoType(Person.class,"name","age","work");
+        csvInput2.print();
+    }
+
+}
+
+```
+
+#### 4. 从多层文件夹中读取数据
+
+在开发中，总能碰见，多层文件目录，我们需要递归访问文件夹。在scala版本中的DataSetDataSourceApp类中添加下面的方法。
+
+scala版本：
+
+```scala
+
+  //从多层文件夹中读取
+  def readRecursiveFiles(env: ExecutionEnvironment): Unit ={
+    val inputPath = "file:///home/willhope/data/input"
+    val parameters = new Configuration()
+    parameters.setBoolean("recursive.file.enumeration",true)
+    env.readTextFile(inputPath).withParameters(parameters).print()
+  }
+
+```
+
+java版本：在java版本中的JDataSetDataSourceApp类中添加下面的方法。
+
+```java
+
+    public static void readRecursiveFiles(ExecutionEnvironment env)throws Exception{
+        String inputPath = "file:///home/willhope/data/input";
+        Configuration parameters = new Configuration();
+        parameters.setBoolean("recursive.file.enumeration",true);
+        env.readTextFile(inputPath).withParameters(parameters).print();
+    }
+
+
+```
+
+#### 5. 从压缩文件中读取数据
+
+scala版本：在scala版本中的DataSetDataSourceApp类中添加下面的方法。
+
+```scala
+  //从压缩文件中读取数据
+  def readCompressionFiles(env: ExecutionEnvironment): Unit ={
+    val inputPath = "file:///home/willhope/data/compress"
+    env.readTextFile(inputPath).print()
+
+  }
+
+```
+
+java版本：在java版本中的JDataSetDataSourceApp类中添加下面的方法。
+
+```java
+
+  //从压缩文件中读取数据
+  public static void readCompressionFiles(ExecutionEnvironment env)throws Exception{
+      String inputPath = "file:///home/willhope/data/compress";
+      env.readTextFile(inputPath).print();
+  }
+
+```
+
+### 5.2 Transformation
+
+使用高级算子将读取的源数据进行处理，`注意，这些高级算子在大数据处理框架中均有`。主要算子有:
+
+|  算子名 | 解释   |
+| :------: | :------:|
+|Map|Takes one element and produces one element
+|
+|flapMap|Takes one element and produces zero, one, or more elements
+|
+|MapPartition|Transforms a parallel partition in a single function call. The function gets the partition as an Iterable stream and can produce an arbitrary number of result values. The number of elements in each partition depends on the degree-of-parallelism and previous operations
+|
+|Filter|Evaluates a boolean function for each element and retains those for which the function returns true.IMPORTANT: The system assumes that the function does not modify the elements on which the predicate is applied. Violating this assumption can lead to incorrect results
+|
+|Reduce|Combines a group of elements into a single element by repeatedly combining two elements into one. Reduce may be applied on a full data set or on a grouped data set
+|
+|ReduceGroup|Combines a group of elements into one or more elements. ReduceGroup may be applied on a full data set or on a grouped data set
+|
+|Aggregate|Aggregates a group of values into a single value. Aggregation functions can be thought of as built-in reduce functions. Aggregate may be applied on a full data set, or on a grouped data set
+|
+|Distinct|Returns the distinct elements of a data set. It removes the duplicate entries from the input DataSet, with respect to all fields of the elements, or a subset of fields
+|
+|Join|Joins two data sets by creating all pairs of elements that are equal on their keys. Optionally uses a JoinFunction to turn the pair of elements into a single element, or a FlatJoinFunction to turn the pair of elements into arbitrarily many (including none) elements. See the keys section to learn how to define join keys
+|
+|OuterJoin|Performs a left, right, or full outer join on two data sets. Outer joins are similar to regular (inner) joins and create all pairs of elements that are equal on their keys. In addition, records of the "outer" side (left, right, or both in case of full) are preserved if no matching key is found in the other side. Matching pairs of elements (or one element and a null value for the other input) are given to a JoinFunction to turn the pair of elements into a single element, or to a FlatJoinFunction to turn the pair of elements into arbitrarily many (including none) elements. See the keys section to learn how to define join keys
+|
+|CoGroup|The two-dimensional variant of the reduce operation. Groups each input on one or more fields and then joins the groups. The transformation function is called per pair of groups. See the keys section to learn how to define coGroup keys|
+|Cross|Builds the Cartesian product (cross product) of two inputs, creating all pairs of elements. Optionally uses a CrossFunction to turn the pair of elements into a single element
+|
+|Union|Produces the union of two data sets
+|
+|Rebalance|Evenly rebalances the parallel partitions of a data set to eliminate data skew. Only Map-like transformations may follow a rebalance transformation
+|
+|Hash-Partition|Hash-partitions a data set on a given key. Keys can be specified as position keys, expression keys, and key selector functions
+|
+|Range-Partition|Range-partitions a data set on a given key. Keys can be specified as position keys, expression keys, and key selector functions|
+|Custom Partitioning|Assigns records based on a key to a specific partition using a custom Partitioner function. The key can be specified as position key, expression key, and key selector function.Note: This method only works with a single field key
+|
+|Sort Partition|Locally sorts all partitions of a data set on a specified field in a specified order. Fields can be specified as tuple positions or field expressions. Sorting on multiple fields is done by chaining sortPartition() calls
+|
+|First-n|Returns the first n (arbitrary) elements of a data set. First-n can be applied on a regular data set, a grouped data set, or a grouped-sorted data set. Grouping keys can be specified as key-selector functions or field position keys
+|
+
+#### 1. 
+
+
+## 六、DataStream API
