@@ -59,6 +59,23 @@
         - [6.4 自定义Sink方式](#64-自定义sink方式)
             - [1. Scala实现](#1-scala实现)
             - [2. Java实现](#2-java实现-1)
+    - [七、Flink Table & SQL API](#七flink-table--sql-api)
+        - [7.1  Flink Table & SQL API概述](#71--flink-table--sql-api概述)
+        - [7.2 Scala实现Table api & sql](#72-scala实现table-api--sql)
+    - [八、Time & windows操作](#八time--windows操作)
+        - [8.1 Time类型](#81-time类型)
+            - [1. 事件时间Event Time](#1-事件时间event-time)
+            - [2. 摄取时间Ingestion time](#2-摄取时间ingestion-time)
+            - [3. 处理时间Processing Time](#3-处理时间processing-time)
+        - [8.2 Windows](#82-windows)
+            - [1. 窗口概念](#1-窗口概念)
+            - [2. Time Windows](#2-time-windows)
+            - [3. Tumbling Windows](#3-tumbling-windows)
+            - [4. Sliding Windows](#4-sliding-windows)
+            - [5. Session Windows](#5-session-windows)
+            - [6. Global Windows](#6-global-windows)
+            - [7. Count Windows](#7-count-windows)
+            - [8. 参考资料](#8-参考资料)
 
 
 # 第一部分——Flink初识
@@ -2710,3 +2727,263 @@ public class JavaCustomSinkToMySQL {
 
 
 ```
+
+## 七、Flink Table & SQL API
+
+Table 和 SQL API是关系型API，此章节仅作了解，当前API并不完善，有待后续版本的发布。
+
+DataSet和DataStream API开发还是非常的有难度，开发中SQL相对来说，开发效率高。
+
+### 7.1  Flink Table & SQL API概述
+
+Apache Flink具有两个关系API-Table API和SQL-用于统一流和批处理。 Table API是用于Scala和Java的语言集成查询API，它允许以非常直观的方式组合来自关系运算符（例如选择，过滤和联接）的查询。 Flink的SQL支持基于实现SQL标准的Apache Calcite。 无论输入是批处理输入（DataSet）还是流输入（DataStream），在两个接口中指定的查询具有相同的语义并指定相同的结果。
+
+Table API和SQL接口以及Flink的DataStream和DataSet API紧密集成在一起。 您可以在所有API和基于这些API的库之间轻松切换。 例如，您可以使用CEP库从DataStream中提取模式，然后再使用Table API分析模式，或者您可以使用SQL查询来扫描，过滤和聚合批处理表，然后在预处理程序上运行Gelly图算法 数据。
+
+请注意，Table API和SQL尚未完成功能，正在积极开发中。 [Table API，SQL]和[stream，batch]输入的每种组合都不支持所有操作
+
+### 7.2 Scala实现Table api & sql
+
+scala版本：
+
+```scala
+import org.apache.flink.api.scala._
+import org.apache.flink.table.api.TableEnvironment
+import org.apache.flink.types.Row
+
+object TableSQLApi {
+
+  def main(args: Array[String]): Unit = {
+
+    val env = ExecutionEnvironment.getExecutionEnvironment
+    val tableEnv = TableEnvironment.getTableEnvironment(env)
+    val filePath = "file:///home/willhope/data/sales.csv"
+
+    //拿到dataset
+    val csv = env.readCsvFile[SalesLog](filePath,ignoreFirstLine = true)
+
+    //转换成table
+    val salesTable = tableEnv.fromDataSet(csv)
+    //注册成表
+    tableEnv.registerTable("sales",salesTable)
+
+    //执行sql语句
+    val resultTable = tableEnv.sqlQuery("select customerId , sum(amountPaid) money from sales group by customerId")
+
+    //在转换为dataset
+    tableEnv.toDataSet[Row](resultTable).print()
+
+  }
+
+  case class SalesLog(transactionId:String,customerId:String,itemId:String,amountPaid:Double)
+}
+
+```
+
+java版本:
+
+```java
+import org.apache.flink.api.java.DataSet;
+import org.apache.flink.api.java.ExecutionEnvironment;
+import org.apache.flink.table.api.Table;
+import org.apache.flink.table.api.TableEnvironment;
+import org.apache.flink.table.api.java.BatchTableEnvironment;
+import org.apache.flink.types.Row;
+
+public class JTableSQLApi {
+
+    public static void main(String[] args) throws Exception {
+
+        ExecutionEnvironment env = ExecutionEnvironment.getExecutionEnvironment();
+        BatchTableEnvironment tableEnv = BatchTableEnvironment.getTableEnvironment(env);
+
+        String filePath = "file:///home/willhope/data/sales.csv";
+        //获取dataset
+        DataSet<Sales> csv = env.readCsvFile(filePath)
+                .ignoreFirstLine()
+                .pojoType(Sales.class,"transactionId","customerId","itemId","amountPaid");
+
+        //将dataset转换成table
+        Table sales = tableEnv.fromDataSet(csv);
+        //注册成表
+        tableEnv.registerTable("sales",sales);
+        //查询
+        Table resultTable = tableEnv.sqlQuery("select customerId , sum(amountPaid) money from sales group by customerId");
+        //将结果转换为dataset
+        DataSet<Row> result = tableEnv.toDataSet(resultTable, Row.class);
+        result.print();
+
+    }
+
+
+    public static class Sales{
+        public String transactionId;
+        public String customerId;
+        public String itemId;
+        public Double amountPaid;
+    }
+
+}
+
+```
+
+## 八、Time & windows操作
+
+### 8.1 Time类型
+
+Flink能够根据不同的时间概念处理流数据。有三种时间，分别是事件时间，摄取时间，处理时间。对于流处理来说，以事件时间作为基准时间来进行业务逻辑的处理。
+
++ 处理时间是指正在执行相应操作的机器的系统时间（也称为“挂钟时间”）。如果以ProcessingTime基准来定义时间窗口将形成ProcessingTimeWindow，以operator的systemTime为准。
+
++ 事件时间是指基于附加到每一行的时间戳对流数据进行处理。 时间戳可以在事件发生时进行编码。如果以EventTime为基准来定义时间窗口将形成EventTimeWindow,要求消息本身就应该携带EventTime。
+
++ 摄取时间是事件进入Flink的时间； 在内部，对事件的处理类似于事件时间。如果以IngesingtTime为基准来定义时间窗口将形成IngestingTimeWindow,以source的systemTime为准
+
+#### 1. 事件时间Event Time
+
+
+Event Time 是事件发生的时间，一般就是数据本身携带的时间。这个时间通常是在事件到达 Flink 之前就确定的，并且可以从每个事件中获取到事件时间戳。在 Event Time 中，时间取决于数据，而跟其他没什么关系。Event Time 程序必须指定如何生成 Event Time 水印，这是表示 Event Time 进度的机制。事件时间允许表程序根据每个记录中包含的时间来产生结果。 即使在无序事件或迟发事件的情况下，这也可以提供一致的结果。 从持久性存储中读取记录时，还可以确保表程序的可重播结果。
+
+完美的说，无论事件什么时候到达或者其怎么排序，最后处理 Event Time 将产生完全一致和确定的结果。但是，除非事件按照已知顺序（按照事件的时间）到达，否则处理 Event Time 时将会因为要等待一些无序事件而产生一些延迟。由于只能等待一段有限的时间，因此就难以保证处理 Event Time 将产生完全一致和确定的结果。
+
+假设所有数据都已到达， Event Time 操作将按照预期运行，即使在处理无序事件、延迟事件、重新处理历史数据时也会产生正确且一致的结果。 例如，每小时事件时间窗口将包含带有落入该小时的事件时间戳的所有记录，无论它们到达的顺序如何。
+
+请注意，有时当 Event Time 程序实时处理实时数据时，它们将使用一些 Processing Time 操作，以确保它们及时进行。
+
+#### 2. 摄取时间Ingestion time
+
+Ingestion Time 是事件进入 Flink 的时间。 在源操作处，每个事件将源的当前时间作为时间戳，并且基于时间的操作（如时间窗口）会利用这个时间戳。
+
+Ingestion Time 在概念上位于 Event Time 和 Processing Time 之间。 与 Processing Time 相比，它稍微贵一些，但结果更可预测。因为 Ingestion Time 使用稳定的时间戳（在源处分配一次），所以对事件的不同窗口操作将引用相同的时间戳，而在 Processing Time 中，每个窗口操作符可以将事件分配给不同的窗口（基于机器系统时间和到达延迟）。
+
+与 Event Time 相比，Ingestion Time 程序无法处理任何无序事件或延迟数据，但程序不必指定如何生成水印。
+
+在 Flink 中，，Ingestion Time 与 Event Time 非常相似，但 Ingestion Time 具有自动分配时间戳和自动生成水印功能。
+
+#### 3. 处理时间Processing Time
+
+Processing Time 是指事件被处理时机器的系统时间。处理时间允许表程序根据本地计算机的时间产生结果。 这是最简单的时间概念，但不提供确定性。 它既不需要时间戳提取也不需要水印生成。
+
+当流程序在 Processing Time 上运行时，所有基于时间的操作(如时间窗口)将使用当时机器的系统时间。每小时 Processing Time 窗口将包括在系统时钟指示整个小时之间到达特定操作的所有事件。
+
+例如，如果应用程序在上午 9:15 开始运行，则第一个每小时 Processing Time 窗口将包括在上午 9:15 到上午 10:00 之间处理的事件，下一个窗口将包括在上午 10:00 到 11:00 之间处理的事件。
+
+Processing Time 是最简单的 “Time” 概念，不需要流和机器之间的协调，它提供了最好的性能和最低的延迟。但是，在分布式和异步的环境下，Processing Time 不能提供确定性，因为它容易受到事件到达系统的速度（例如从消息队列）、事件在系统内操作流动的速度以及中断的影响。
+
+
+### 8.2 Windows
+
+#### 1. 窗口概念
+
+在大多数场景下，我们需要统计的数据流都是无界的，因此我们无法等待整个数据流终止后才进行统计。通常情况下，我们只需要对某个时间范围或者数量范围内的数据进行统计分析：如每隔五分钟统计一次过去一小时内所有商品的点击量；或者每发生1000次点击后，都去统计一下每个商品点击率的占比。在 Flink 中，我们使用窗口 (Window) 来实现这类功能。按照统计维度的不同，Flink 中的窗口可以分为 时间窗口 (Time Windows) 和 计数窗口 (Count Windows) 。
+
+#### 2. Time Windows
+
+Time Windows 用于以时间为维度来进行数据聚合，具体分为以下四类：
+
+#### 3. Tumbling Windows
+
+滚动窗口 (Tumbling Windows) 是指彼此之间没有重叠的窗口。例如：每隔1小时统计过去1小时内的商品点击量，那么 1 天就只能分为 24 个窗口，每个窗口彼此之间是不存在重叠的，具体如下：
+
+<div align="center"> <img width="600px" src="pictures/flink-tumbling-windows.png"/> </div>
+
+
+这里我们以词频统计为例，给出一个具体的用例，代码如下：
+
+```java
+final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+// 接收socket上的数据输入
+DataStreamSource<String> streamSource = env.socketTextStream("localhost", 9999, "\n", 3);
+streamSource.flatMap(new FlatMapFunction<String, Tuple2<String, Long>>() {
+    @Override
+    public void flatMap(String value, Collector<Tuple2<String, Long>> out) throws Exception {
+        String[] words = value.split("\t");
+        for (String word : words) {
+            out.collect(new Tuple2<>(word, 1L));
+        }
+    }
+}).keyBy(0).timeWindow(Time.seconds(3)).sum(1).print(); //每隔3秒统计一次每个单词出现的数量
+env.execute("Flink Streaming");
+```
+
+测试结果如下：
+
+<div align="center"> <img src="pictures/flink-window-word-count.png"/> </div>
+
+
+
+#### 4. Sliding Windows
+
+滑动窗口用于滚动进行聚合分析，例如：每隔 6 分钟统计一次过去一小时内所有商品的点击量，那么统计窗口彼此之间就是存在重叠的，即 1天可以分为 240 个窗口。图示如下：
+
+<div align="center"> <img width="600px" src="pictures/flink-sliding-windows.png"/> </div>
+
+
+可以看到 window 1 - 4 这四个窗口彼此之间都存在着时间相等的重叠部分。想要实现滑动窗口，只需要在使用 timeWindow 方法时额外传递第二个参数作为滚动时间即可，具体如下：
+
+```java
+// 每隔3秒统计一次过去1分钟内的数据
+timeWindow(Time.minutes(1),Time.seconds(3))
+```
+
+#### 5. Session Windows
+
+当用户在进行持续浏览时，可能每时每刻都会有点击数据，例如在活动区间内，用户可能频繁的将某类商品加入和移除购物车，而你只想知道用户本次浏览最终的购物车情况，此时就可以在用户持有的会话结束后再进行统计。想要实现这类统计，可以通过 Session Windows 来进行实现。
+
+<div align="center"> <img width="600px" src="pictures/flink-session-windows.png"/> </div>
+
+
+具体的实现代码如下：
+
+```java
+// 以处理时间为衡量标准，如果10秒内没有任何数据输入，就认为会话已经关闭，此时触发统计
+window(ProcessingTimeSessionWindows.withGap(Time.seconds(10)))
+// 以事件时间为衡量标准    
+window(EventTimeSessionWindows.withGap(Time.seconds(10)))
+```
+
+#### 6. Global Windows
+
+最后一个窗口是全局窗口， 全局窗口会将所有 key 相同的元素分配到同一个窗口中，其通常配合触发器 (trigger) 进行使用。如果没有相应触发器，则计算将不会被执行。
+
+<div align="center"> <img width="600px" src="pictures/flink-non-windowed.png"/> </div>
+
+
+这里继续以上面词频统计的案例为例，示例代码如下：
+
+```java
+// 当单词累计出现的次数每达到10次时，则触发计算，计算整个窗口内该单词出现的总数
+window(GlobalWindows.create()).trigger(CountTrigger.of(10)).sum(1).print();
+```
+
+#### 7. Count Windows
+
+Count Windows 用于以数量为维度来进行数据聚合，同样也分为滚动窗口和滑动窗口，实现方式也和时间窗口完全一致，只是调用的 API 不同，具体如下：
+
+```java
+// 滚动计数窗口，每1000次点击则计算一次
+countWindow(1000)
+// 滑动计数窗口，每10次点击发生后，则计算过去1000次点击的情况
+countWindow(1000,10)
+```
+
+实际上计数窗口内部就是调用的我们上一部分介绍的全局窗口来实现的，其源码如下：
+
+```java
+public WindowedStream<T, KEY, GlobalWindow> countWindow(long size) {
+    return window(GlobalWindows.create()).trigger(PurgingTrigger.of(CountTrigger.of(size)));
+}
+
+
+public WindowedStream<T, KEY, GlobalWindow> countWindow(long size, long slide) {
+    return window(GlobalWindows.create())
+        .evictor(CountEvictor.of(size))
+        .trigger(CountTrigger.of(slide));
+}
+```
+
+
+
+#### 8. 参考资料
+
+Flink Windows： https://ci.apache.org/projects/flink/flink-docs-release-1.9/dev/stream/operators/windows.html 
