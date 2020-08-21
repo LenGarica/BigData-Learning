@@ -2987,3 +2987,617 @@ public WindowedStream<T, KEY, GlobalWindow> countWindow(long size, long slide) {
 #### 8. 参考资料
 
 Flink Windows： https://ci.apache.org/projects/flink/flink-docs-release-1.9/dev/stream/operators/windows.html 
+
+
+## 九、Flink Connectors
+
+### 9.1 Connector是什么
+
+Connectors是数据进出Flink的一套接口和实现，可以实现Flink与各种存储、系统的连接
+
+注意：数据进出Flink的方式不止Connectors，还有：
+
+1.Async I/O(类Source能力)：异步访问外部数据库
+
+2.Queryable State(类Sink能力)：当读多写少时，外部应用程序从Flink拉取需要的数据，而不是Flink把大量数据推入外部系统(后面再讲)
+
+### 9.2 哪些渠道获取connector
+
+预定义Source和Sink：直接就用，无序引入额外依赖，一般用于测试、调试。
+
+捆绑的Connectors：需要专门引入对应的依赖(按需)，主要是实现外部数据进出Flink
+
+1.Apache Kafka (source/sink)
+
+2.Apache Cassandra (sink)
+
+3.Amazon Kinesis Streams (source/sink)
+
+4.Elasticsearch (sink)
+
+5.Hadoop FileSystem (sink)
+
+6.RabbitMQ (source/sink)
+
+7.Apache NiFi (source/sink)
+
+8.Twitter Streaming API (source)
+
+Apache Bahir
+
+1.Apache ActiveMQ (source/sink)
+
+2.Apache Flume (sink)
+
+3.Redis (sink)
+
+4.Akka (sink)
+
+5.Netty (source)
+
+### 9.3 HDFS connector
+
+这部分主要用来看一下如何实现，生产上不太可能直接这么写
+
+```scala
+import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.connectors.fs.StringWriter
+import org.apache.flink.streaming.connectors.fs.bucketing.{BucketingSink, DateTimeBucketer}
+
+object FileSystemSinkApp {
+
+
+  def main(args: Array[String]): Unit = {
+
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    val data = env.socketTextStream("localhost",9999)
+    data.print().setParallelism(1)
+
+    val filePath = "file:///home/willhope/data/hdfssink"
+    val sink = new BucketingSink[String](filePath)
+    sink.setBucketer(new DateTimeBucketer[String]("yyyy-MM-dd--HHmm"))
+    sink.setWriter(new StringWriter())
+    //sink.setBatchSize(1024 * 1024 * 400) // this is 400 MB,
+    //sink.setBatchRolloverInterval(20 * 60 * 1000); // this is 20 mins
+    sink.setBatchRolloverInterval(2000)
+
+    data.addSink(sink)
+
+    env.execute("FileSystemSinkApp")
+
+  }
+}
+
+```
+
+### 9.4 zookeeper和kafka的安装
+
+这部分请查看Installation篇的zk+kafka+flume安装文档。
+
+在kafka目录下bin目录中执行： kafka-server-start.sh -daemon $KAFKA_HOME/config/server.properties
+
+检查是否启动成功 jps Kafka
+
+1. 创建topic
+./kafka-topics.sh --create --zookeeper willhope-pc:2181 --replication-factor 1 --partitions 1 --topic test
+2. 查看所有的topic
+./kafka-topics.sh --list --zookeeper willhope-pc:2181
+3. 启动生产者
+./kafka-console-producer.sh --broker-list willhope-pc:9092 --topic test
+4. 重开一个终端启动消费者
+./kafka-console-consumer.sh --bootstrap-server willhope-pc:9092 --topic test	
+5. 测试
+
+在生产者那边输入数据，查看消费者终端是否有
+```
+>hadoop
+>spark
+>java
+>scala
+```
+
+
+### 9.5 flink对接kafka作为source的使用
+
+在9.4中，创建了一个test的topic，我们这里使用这个topic使得flink对接kafka作为source。即，使用kafka生产者生产数据，flink接受此数据作为source，Kafka =》 flink
+
+```scala
+package flinkprimary.connectors
+
+import java.util.Properties
+
+import org.apache.flink.api.common.serialization.SimpleStringSchema
+import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
+
+object KafkaConnectorConsumerApp {
+
+  def main(args: Array[String]): Unit = {
+
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+
+      //优化代码
+    // checkpoint常用设置参数
+//    env.enableCheckpointing(4000)
+//    env.getCheckpointConfig.setCheckpointingMode(CheckpointingMode.EXACTLY_ONCE)
+//    env.getCheckpointConfig.setCheckpointTimeout(10000)
+//    env.getCheckpointConfig.setMaxConcurrentCheckpoints(1)
+
+
+
+    import org.apache.flink.api.scala._
+
+    val topic = "test"
+    val properties = new Properties()
+
+    properties.setProperty("bootstrap.servers", "willhope-pc:9092")
+    properties.setProperty("group.id", "test")
+
+    //source端
+    val data = env.addSource(new FlinkKafkaConsumer[String](topic,new SimpleStringSchema(), properties))
+
+    data.print()
+
+    env.execute("KafkaConnectorConsumerApp")
+  }
+}
+```
+
+执行上述代码后，在kafka的生产者终端，输入一些数据，查看idea终端是否出现输入的数据。如果出现，则表明程序正确。
+
+### 9.6 flink对接kafka作为sink的使用
+
+使用socket创建一些数据，flink接收这些数据并存储。本次使用netcat工具创建数据，监听9999端口。在使用此端口时，先查看是否被占用
+
+ps -ef|grep 9999 查看端口是否被占用，未占用的话，使用nc -lk -p 9999 阻塞该端口
+
+
+```scala
+import java.util.Properties
+
+import org.apache.flink.api.common.serialization.SimpleStringSchema
+import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaProducer
+import org.apache.flink.streaming.util.serialization.KeyedSerializationSchemaWrapper
+
+
+object KafkaConnectorProducerApp {
+
+  def main(args: Array[String]): Unit = {
+
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+
+    // 从socket接收数据，通过Flink，将数据Sink到Kafka
+    val data = env.socketTextStream("localhost", 9999)
+
+    val topic = "test"
+    val properties = new Properties()
+    properties.setProperty("bootstrap.servers", "willhope-pc:9092")
+
+    val kafkaSink = new FlinkKafkaProducer[String](topic,
+      new KeyedSerializationSchemaWrapper[String](new SimpleStringSchema()),
+      properties)
+
+//优化代码
+//    val kafkaSink = new FlinkKafkaProducer[String](topic,
+//      new KeyedSerializationSchemaWrapper[String](new SimpleStringSchema()),
+//      properties,
+//      FlinkKafkaProducer.Semantic.EXACTLY_ONCE)
+
+    data.addSink(kafkaSink)
+
+    env.execute("KafkaConnectorProducerApp")
+  }
+}
+
+```
+
+执行上述代码后，在nc终端，输入一些数据，查看kafka消费者终端是否出现输入的数据。如果出现，则表明程序正确。
+
+
+## 十、Flink 部署及作业提交
+
+
+### 10.1 Flink单机部署
+
+#### 1. 前置条件：
+
+JDK、Maven3、Flink源码进行编译，不是使用直接下载二进制包
+
+下载flink源码包：wget https://github.com/apache/flink/archive/release-1.7.0.tar.gz
+
+#### 2. 编译
+
+将下载的源码包进行解压，进入到该解压包，执行下面的语句进行编译：
+
+mvn clean install -DskipTests -Pvendor-repos -Dfast -Dhadoop.version=2.6.0-cdh5.15.1 
+
+第一次编译是需要花费很长时间的，因为需要去中央仓库下载flink源码中所有的依赖包
+
+如果遇到某个包下载不下来而出现错误，可以根据错误提示手动下载包，并进行安装，之后重新编译。此处举一个例子，我在编译时候，这个maprfs-5.2.1-mapr.jar包总数出现问题，那就去https://mvnrepository.com/ 找这个包，下载后，进行手动安装。
+
+mvn install:install-file -DgroupId=com.mapr.hadoop -DartifactId=maprfs -Dversion=5.2.1-mapr -Dpackaging=jar  -Dfile=/home/willhope/Downloads/maprfs-5.2.1-mapr.jar
+
+mvn install:install-file -DgroupId=org.apache.flink -DartifactId=flink-mapr-fs -Dversion=1.7.0 -Dpackaging=jar -Dfile=/home/willhope/Downloads/flink-mapr-fs-1.7.0.jar
+
+安装完毕后，继续编译mvn clean install -DskipTests -Pvendor-repos -Dfast -Dhadoop.version=2.6.0-cdh5.15.1 -rf :flink-mapr-fs
+
+测试：使用flink执行wordcount
+```
+./bin/flink run examples/streaming/SocketWindowWordCount.jar --port 9000
+```
+
+将flink添加到环境中并source，$FLINK_HOME
+
+
+# 第二部分——实战项目
+
+## 一、项目需求
+
+1. 统计一分钟内每个域名访问产生的流量  flink接收kafka的数据进行处理
+
+2. 统计一分钟每个用户产生的流量  flink接收kafka的数据进行处理 + flink读取域名和用户的配置数据进行处理
+
+数据来源：代码mock方式，即自己造数据
+
+## 二、mock数据
+
+本次想使用的数据如下面方式：
+```
+aliyun	
+CN 	
+E
+[17/Jul/2018:17:07:50 +0800]
+223.104.18.110
+v2.go2yd.com
+17168
+```
+
+通过mock方式向kafka的broker里面发送数据，使用Java编写一个KafkaProducerApp类，使用字符串数组，随机产生每个部分的字段，最后拼接起来，再将这些数据使用kafka的consumer进行消费。
+
+```java
+package project;
+
+import org.apache.kafka.clients.producer.KafkaProducer;
+import org.apache.kafka.clients.producer.ProducerRecord;
+import org.apache.kafka.common.serialization.StringSerializer;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Properties;
+import java.util.Random;
+
+public class KafkaProducerApp {
+
+    public static void main(String[] args) throws Exception{
+
+        Properties props = new Properties();
+        props.setProperty("bootstrap.servers", "willhope-pc:9092");
+        props.setProperty("key.serializer", StringSerializer.class.getName());
+        props.setProperty("value.serializer", StringSerializer.class.getName());
+
+        //key为string类型，value为string类型
+        KafkaProducer<String,String> producer = new KafkaProducer<String,String>(props);
+
+        String topic = "test";
+
+        //通过死循环一直往kafka中生产数据
+        while (true){
+            StringBuilder stringBuilder = new StringBuilder();
+
+            stringBuilder.append("imooc").append("\t")
+                    .append("CN").append("\t")
+                    .append(getLevels()).append("\t")
+                    .append(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date())).append("\t")
+                    .append(getIps()).append("\t")
+                    .append(getDomains()).append("\t")
+                    .append(getTraffic()).append("\t");
+
+            System.out.println(stringBuilder.toString());
+
+            producer.send(new ProducerRecord<String, String>(topic,stringBuilder.toString()));
+
+            Thread.sleep(2000);
+
+        }
+    }
+
+    //生产流量数据
+    private static long getTraffic() {
+        return new Random().nextInt(10000);
+    }
+
+    //生产域名数据
+    private static String getDomains() {
+        String[] domains = new String[]{
+                "v1.go2yd.com",
+                "v2.go2yd.com",
+                "v3.go2yd.com",
+                "v4.go2yd.com",
+                "vmi.go2yd.com"
+        };
+
+        return domains[new Random().nextInt(domains.length)];
+    }
+
+    //生产Ip数据
+    private static String getIps() {
+        String[] ips = new String[]{
+                "223.104.18.110",
+                "113.101.75.194",
+                "27.17.127.135",
+                "183.225.139.16",
+                "112.1.66.34",
+                "175.148.211.190",
+                "183.227.58.21",
+                "59.83.198.84",
+                "117.28.38.28",
+                "117.59.39.169"
+        };
+        return ips[new Random().nextInt(ips.length)];
+    }
+
+    //生产level数据
+    public static String getLevels(){
+        String[] levels = new String[]{"M","E"};
+        return levels[new Random().nextInt(levels.length)];
+    }
+}
+
+```
+
+执行上述代码后，可以在kafka的consumer终端看到有数据出现。
+
+## 三、将数据写入es并使用kibana展示
+
+首先，我们需要将我们mock出的数据进行一定的处理，然后，查看elastic官方文档，对数据进行展示。
+
+```scala
+
+package com.imooc.flink.project
+
+import java.text.SimpleDateFormat
+import java.util.{Date, Properties}
+
+import org.apache.flink.api.common.functions.RuntimeContext
+import org.apache.flink.api.common.serialization.SimpleStringSchema
+import org.apache.flink.api.java.tuple.Tuple
+import org.apache.flink.streaming.api.TimeCharacteristic
+import org.apache.flink.streaming.api.functions.AssignerWithPeriodicWatermarks
+import org.apache.flink.streaming.api.scala.StreamExecutionEnvironment
+import org.apache.flink.streaming.api.scala.function.WindowFunction
+import org.apache.flink.streaming.api.watermark.Watermark
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows
+import org.apache.flink.streaming.api.windowing.time.Time
+import org.apache.flink.streaming.api.windowing.windows.TimeWindow
+import org.apache.flink.streaming.connectors.elasticsearch.{ElasticsearchSinkFunction, RequestIndexer}
+import org.apache.flink.streaming.connectors.elasticsearch6.ElasticsearchSink
+import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer
+import org.apache.flink.util.Collector
+import org.apache.http.HttpHost
+import org.elasticsearch.action.index.IndexRequest
+import org.elasticsearch.client.Requests
+import org.slf4j.LoggerFactory
+
+import scala.collection.mutable.ArrayBuffer
+
+object LogAnalysis {
+
+  // 在生产上记录日志建议采用这种方式
+  val logger = LoggerFactory.getLogger("LogAnalysis")
+
+  def main(args: Array[String]): Unit = {
+
+    val env = StreamExecutionEnvironment.getExecutionEnvironment
+    //env.setParallelism(3)  配置在这里的并行度，并行度别写死，最好是外面传递进来
+    env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime)
+
+    import org.apache.flink.api.scala._
+    val topic = "test"
+
+    val properties = new Properties()
+    properties.setProperty("bootstrap.servers", "willhope-pc:9092")
+    properties.setProperty("group.id", "test")
+
+    val consumer = new FlinkKafkaConsumer[String](topic,
+      new SimpleStringSchema(),
+      properties)
+
+    // 接收Kafka数据
+    val data = env.addSource(consumer) //.setParallelism(4)
+
+    val logData = data.map(x => {
+      val splits = x.split("\t")
+      val level = splits(2)
+
+      val timeStr = splits(3)
+      var time = 0l
+      try {
+        val sourceFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+        time = sourceFormat.parse(timeStr).getTime
+      } catch {
+        case e: Exception => {
+          logger.error(s"time parse error: $timeStr", e.getMessage)
+        }
+      }
+
+      val domain = splits(5)
+      val traffic = splits(6).toLong
+
+      (level, time, domain, traffic)
+    }).filter(_._2 != 0).filter(_._1 == "E")
+      .map(x => {
+        (x._2, x._3, x._4) // 1 level(抛弃)  2 time  3 domain   4 traffic
+      })
+
+    /**
+     * 在生产上进行业务处理的时候，一定要考虑处理的健壮性以及你数据的准确性
+     * 脏数据或者是不符合业务规则的数据是需要全部过滤掉之后
+     * 再进行相应业务逻辑的处理
+     *
+     * 对于我们的业务来说，我们只需要统计level=E的即可
+     * 对于level非E的，不做为我们业务指标的统计范畴
+     *
+     * 数据清洗：就是按照我们的业务规则把原始输入的数据进行一定业务规则的处理
+     * 使得满足我们的业务需求为准
+     */
+
+    //logData.print().setParallelism(1)
+
+    val resultData = logData.assignTimestampsAndWatermarks(new AssignerWithPeriodicWatermarks[(Long, String, Long)] {
+
+      val maxOutOfOrderness = 10000L // 3.5 seconds
+
+      var currentMaxTimestamp: Long = _ // scala里面的_是非常重要的，请参考Scala实战
+
+      override def getCurrentWatermark: Watermark = {
+        new Watermark(currentMaxTimestamp - maxOutOfOrderness)
+      }
+
+      override def extractTimestamp(element: (Long, String, Long), previousElementTimestamp: Long): Long = {
+        val timestamp = element._1
+        currentMaxTimestamp = Math.max(timestamp, currentMaxTimestamp)
+        timestamp
+      }
+    }).keyBy(1) //此处是按照域名进行keyBy的
+      .window(TumblingEventTimeWindows.of(Time.seconds(60)))
+      .apply(new WindowFunction[(Long, String, Long), (String, String, Long), Tuple, TimeWindow] {
+        override def apply(key: Tuple, window: TimeWindow, input: Iterable[(Long, String, Long)], out: Collector[(String, String, Long)]): Unit = {
+
+          val domain = key.getField(0).toString
+          var sum = 0l
+
+          val times = ArrayBuffer[Long]()
+
+          val iterator = input.iterator
+          while (iterator.hasNext) {
+            val next = iterator.next()
+            sum += next._3 // traffic求和
+
+            // TODO... 是能拿到你这个window里面的时间的  next._1
+            times.append(next._1)
+          }
+
+          /**
+           * 第一个参数：这一分钟的时间 2020-08-21 09:17
+           * 第二个参数：域名
+           * 第三个参数：traffic的和
+           */
+          val time = new SimpleDateFormat("yyyy-MM-dd HH:mm").format(new Date(times.max))
+          out.collect((time, domain, sum))
+        }
+      })
+
+    val httpHosts = new java.util.ArrayList[HttpHost]
+    httpHosts.add(new HttpHost("localhost", 9200, "http"))
+
+    val esSinkBuilder = new ElasticsearchSink.Builder[(String, String, Long)](
+      httpHosts,
+      new ElasticsearchSinkFunction[(String, String, Long)] {
+        def process(element: (String, String, Long), ctx: RuntimeContext, indexer: RequestIndexer) {
+          val json = new java.util.HashMap[String, Any]
+          json.put("time", element._1)
+          json.put("domain", element._2)
+          json.put("traffics", element._3)
+
+          val id = element._1 + "-" + element._2
+
+          val rqst: IndexRequest = Requests.indexRequest
+            .index("cdn")
+            .`type`("traffic")
+            .id(id)
+            .source(json)
+
+          indexer.add(rqst)
+        }
+      }
+    )
+
+    // configuration for the bulk requests; this instructs the sink to emit after every element, otherwise they would be buffered
+    esSinkBuilder.setBulkFlushMaxActions(1)
+
+
+    // finally, build and add the sink to the job's pipeline
+    resultData.addSink(esSinkBuilder.build)
+
+    env.execute("LogAnalysis")
+  }
+}
+
+
+
+```
+
+在终端的根目录下执行下面这句话 curl -XPUT 'http://localhost:9200/cdn' 
+
+再执行这下面的数据
+
+curl -H "Content-Type: application/json" -XPOST 'http://localhost:9200/cdn/traffic/_mapping?pretty' -d '{
+"traffic":{
+	"properties":{
+		"domain":{"type":"keyword"},
+		"traffics":{"type":"long"},
+		"time":{"type":"date","format": "yyyy-MM-dd HH:mm"}
+		}
+    }
+}
+'
+
+
+## 四、将数据写入MySQL
+
+需求：CDN业务
+userid对应多个域名
+
+userid: 8000000
+
+domains:
+	v1.go2yd.com
+	v2.go2yd.com
+	v3.go2yd.com
+	v4.go2yd.com
+	vmi.go2yd.com
+
+
+userid: 8000001
+	test.gifshow.com
+
+用户id和域名的映射关系
+	从日志里能拿到domain，还得从另外一个表(MySQL)里面去获取userid和domain的映射关系
+
+
+CREATE TABLE user_domain_config(
+id int unsigned auto_increment,
+user_id varchar(40) not null,
+domain varchar(40) not null,
+primary key (id)
+);
+
+
+insert into user_domain_config(user_id,domain) values('8000000','v1.go2yd.com');
+insert into user_domain_config(user_id,domain) values('8000000','v2.go2yd.com');
+insert into user_domain_config(user_id,domain) values('8000000','v3.go2yd.com');
+insert into user_domain_config(user_id,domain) values('8000000','v4.go2yd.com');
+insert into user_domain_config(user_id,domain) values('8000000','vmi.go2yd.com');
+
+
+在做实时数据清洗的时候，不仅需要处理raw日志，还需要关联MySQL表里的数据
+
+自定义一个Flink去读MySQL数据的数据源，然后把两个Stream关联起来
+
+Flink进行数据的清洗
+	读取Kafka的数据
+	读取MySQL的数据
+	connect
+
+	业务逻辑的处理分析：水印 WindowFunction
+	==> ES 注意数据类型  <= Kibana 图形化的统计结果展示
+
+Kibana：各个环节的监控  监控图形化
+
+1 30
+2 40
+3 300
+4 35
+
+我们已经实现的 +  CDN业务文档的描述  ==> 扩展
