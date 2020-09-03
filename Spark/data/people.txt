@@ -1,3 +1,0 @@
-zhangsan,20
-lisi,30
-wangwu,40

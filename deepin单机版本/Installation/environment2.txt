@@ -1,0 +1,43 @@
+# JAVA env
+export JAVA_HOME=/home/hadoop/app/jdk1.8.0_91
+export PATH=$JAVA_HOME/bin:$PATH
+
+# SCALA env
+export SCALA_HOME=/home/hadoop/app/scala-2.11.12
+export PATH=$SCALA_HOME/bin:$PATH
+
+# HADOOP env
+export HADOOP_HOME=/home/hadoop/app/hadoop-2.6.0-cdh5.15.1
+export PATH=$HADOOP_HOME/bin:$PATH
+
+# HIVE env
+export HIVE_HOME=/home/hadoop/app/hive-1.1.0-cdh5.15.1
+export PATH=$HIVE_HOME/bin:$PATH
+
+# maven env
+export PATH=/home/hadoop/app/apache-maven-3.6.3/bin:$PATH
+
+# zookeeper environment
+export ZK_HOME=/home/hadoop/app/zookeeper-3.4.5-cdh5.15.1
+export PATH=$ZK_HOME/bin:$PATH
+
+# kafka environment
+export KAFKA_HOME=/home/hadoop/app/kafka_2.11-2.4.0
+export PATH=$KAFKA_HOME/bin:$PATH
+
+# flume environment
+export FLUME_HOME=/home/hadoop/app/apache-flume-1.6.0-cdh5.15.1-bin
+export PATH=$FLUME_HOME/bin:$PATH
+
+
+# spark environment
+export SPARK_HOME=/home/hadoop/app/spark-2.4.4-bin-2.6.0-cdh5.15.1
+export PATH=$SPARK_HOME/bin:$PATH
+
+# hbase environment
+export HBASE_HOME=/home/hadoop/app/hbase-1.2.0-cdh5.15.1 
+export PATH=$HBASE_HOME/bin:$PATH
+
+# sqoop environment
+export SQOOP_HOME=/home/hadoop/app/sqoop2-1.99.5-cdh5.15.1
+export PATH=$SQOOP_HOME/bin:$PATH

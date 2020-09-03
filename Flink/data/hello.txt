@@ -1,2 +1,0 @@
-hello	world	world	hello	hello	world	hello
-ali	baidu	ali	baidu	baidu	ali

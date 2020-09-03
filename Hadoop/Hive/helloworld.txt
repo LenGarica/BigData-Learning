@@ -1,3 +1,0 @@
-1	zhangsan
-2	lisi
-3	wangwu

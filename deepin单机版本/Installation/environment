@@ -1,0 +1,45 @@
+# java environment
+export	JAVA_HOME=/usr/lib/jdk1.8.0_91
+export	CLASSPATH=.:$JAVA_HOME/lib:$JRE_HOME/lib:$CLASSPATH
+export	PATH=$JAVA_HOME/bin:$JRE_HOME/bin:$PATH
+export	JRE_HOME=$JAVA_HOME/jre
+
+# scala environment
+export SCALA_HOME=/usr/lib/scala-2.11.12
+export PATH=$SCALA_HOME/bin:$PATH
+
+# hadoop environment
+export HADOOP_HOME=/home/willhope/app/hadoop-2.6.0-cdh5.15.1
+export PATH=$HADOOP_HOME/bin:$PATH
+
+# hive environment
+export HIVE_HOME=/home/willhope/app/hive-1.1.0-cdh5.15.1
+export PATH=$HIVE_HOME/bin:$PATH
+
+# spark environment
+export SPARK_HOME=/home/willhope/app/spark-2.4.4-bin-2.6.0-cdh5.15.1
+export PATH=$SPARK_HOME/bin:$PATH
+
+# hbase environment
+export HBASE_HOME=/home/willhope/app/hbase-1.2.0-cdh5.15.1 
+export PATH=$HBASE_HOME/bin:$PATH
+
+# sqoop environment
+export SQOOP_HOME=/home/willhope/app/sqoop2-1.99.5-cdh5.15.1
+export PATH=$SQOOP_HOME/bin:$PATH
+
+# zookeeper environment
+export ZOOKEEPER_HOME=/home/willhope/app/zookeeper-3.4.5-cdh5.15.1
+export PATH=$ZOOKEEPER_HOME/bin:$PATH
+
+# kafka environment
+export KAFKA_HOME=/home/willhope/app/kafka_2.11-2.4.0
+export PATH=$KAFKA_HOME/bin:$PATH
+
+# flume environment
+export FLUME_HOME=/home/willhope/app/apache-flume-1.6.0-cdh5.15.1-bin
+export PATH=$FLUME_HOME/bin:$PATH
+
+
+# maven environment
+export PATH=/home/willhope/app/apache-maven-3.5.4/bin:$PATH
