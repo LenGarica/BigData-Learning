@@ -563,13 +563,24 @@ fi
 
 ##### 2.6 错误解决方法
 
-执行sqoop时候，会报错rror: Could not find or load main class org.apache.sqoop.Sqoop，这是由于没有将sqoop-1.4.7.jar包添加到sqoop中，因此，我们需要先去下载这个jar包，然后将其放到sqoop根目录下，然后在bin目录下的sqoop脚本中将最后一句话更改。
+1. 执行sqoop时候，会报错rror: Could not find or load main class org.apache.sqoop.Sqoop，这是由于没有将sqoop-1.4.7.jar包添加到sqoop中，因此，我们需要先去下载这个jar包，然后将其放到sqoop根目录下，然后在bin目录下的sqoop脚本中将最后一句话更改。
 ```bash
 exec ${HADOOP_COMMON_HOME}/bin/hadoop jar $SQOOP_HOME/sqoop-1.4.7.jar org.apache.sqoop.Sqoop "$@"
 ```
 
-此外还有一个lang3错误，我们需要自己下载lang3的jar包，将其放入lib目录下。
+2. lang3错误，我们需要自己下载lang3的jar包，将其放入lib目录下。
 
 下载地址：http://commons.apache.org/proper/commons-lang/download_lang.cgi
 
 下载后，要记得解压缩，然后将jar包放入lib下
+
+3. java.lang.ClassNotFoundException: org.apache.hadoop.hive.conf.HiveConf
+
+```bash
+cp hive-common-1.1.0-cdh5.15.1.jar ~/app/sqoop-1.4.7/lib/
+
+```
+4. Caused by: java.lang.ClassNotFoundException: org.apache.hadoop.hive.shims.ShimLo
+```bash
+cp $HIVE_HOME/lib/hive-shims-*.jar ~/app/sqoop-1.4.7/lib/
+```
