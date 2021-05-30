@@ -561,3 +561,9 @@ if [ ! -d "${ZOOKEEPER_HOME}" ]; then
 fi
 ```
 
+##### 2.6 错误解决方法
+
+执行sqoop时候，会报错rror: Could not find or load main class org.apache.sqoop.Sqoop，这是由于没有将sqoop-1.4.7.jar包添加到sqoop中，因此，我们需要先去下载这个jar包，然后将其放到sqoop根目录下，然后在bin目录下的sqoop脚本中将最后一句话更改。
+```bash
+exec ${HADOOP_COMMON_HOME}/bin/hadoop jar $SQOOP_HOME/sqoop-1.4.7.jar org.apache.sqoop.Sqoop "$@"
+```
