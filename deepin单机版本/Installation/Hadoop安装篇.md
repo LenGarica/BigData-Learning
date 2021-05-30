@@ -567,3 +567,9 @@ fi
 ```bash
 exec ${HADOOP_COMMON_HOME}/bin/hadoop jar $SQOOP_HOME/sqoop-1.4.7.jar org.apache.sqoop.Sqoop "$@"
 ```
+
+此外还有一个lang3错误，我们需要自己下载lang3的jar包，将其放入lib目录下。
+
+下载地址：http://commons.apache.org/proper/commons-lang/download_lang.cgi
+
+下载后，要记得解压缩，然后将jar包放入lib下
